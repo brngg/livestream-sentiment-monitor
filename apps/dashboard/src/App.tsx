@@ -220,6 +220,8 @@ const frustrationTranscriptTerms = new Set(["angry", "annoying", "bad", "hate", 
 
 type AppRoute = "/" | "/eval";
 
+const evalLabEnabled = import.meta.env.VITE_ENABLE_EVAL_LAB !== "false";
+
 export const dashboardChartHeadings = {
   sentiment: "Sentiment Timeline",
   reaction: "Live Reaction Timeline"
@@ -238,7 +240,7 @@ export function App() {
   const [transcriptStreamState, setTranscriptStreamState] = useState<TranscriptStreamState>("idle");
   const [provisionalTranscriptWindows, setProvisionalTranscriptWindows] = useState<ReactionWindow[]>([]);
   const transcriptStreamClockRef = useRef<{ sessionID: string; startedAtMS: number } | null>(null);
-  const selectedHistorySessionID = route === "/eval" ? selectedEvaluationSessionID : "";
+  const selectedHistorySessionID = evalLabEnabled && route === "/eval" ? selectedEvaluationSessionID : "";
 
   const dashboardQuery = useQuery({
     queryKey: ["dashboard-state"],
@@ -271,6 +273,7 @@ export function App() {
   const historyQuery = useQuery({
     queryKey: ["session-history"],
     queryFn: () => fetchSessionHistory(20),
+    enabled: evalLabEnabled,
     refetchInterval: 15000,
     retry: 0
   });
@@ -568,14 +571,15 @@ export function App() {
 
   function navigate(routePath: AppRoute) {
     if (routePath === route) return;
+    if (!evalLabEnabled && routePath === "/eval") return;
     window.history.pushState({}, "", routePath);
     setRoute(routePath);
   }
 
-  if (route === "/eval") {
+  if (evalLabEnabled && route === "/eval") {
     return (
       <div className="analyst-app">
-        <AnalystHeader state={state} status={status} clock={clock} route={route} onNavigate={navigate} />
+        <AnalystHeader state={state} status={status} clock={clock} route={route} evalLabEnabled={evalLabEnabled} onNavigate={navigate} />
         <EvaluationLabPage
           sessions={historyQuery.data?.sessions || []}
           selectedSessionID={selectedEvaluationSessionID}
@@ -599,7 +603,7 @@ export function App() {
 
   return (
     <div className="analyst-app">
-      <AnalystHeader state={state} status={status} clock={clock} route={route} onNavigate={navigate} />
+      <AnalystHeader state={state} status={status} clock={clock} route={route} evalLabEnabled={evalLabEnabled} onNavigate={navigate} />
       <main className="analyst-main">
         <HeroFeed
           channelInput={channelInput}
@@ -666,12 +670,14 @@ function AnalystHeader({
   status,
   clock,
   route,
+  evalLabEnabled,
   onNavigate
 }: {
   state: DashboardState;
   status: string;
   clock: Date;
   route: AppRoute;
+  evalLabEnabled: boolean;
   onNavigate: (route: AppRoute) => void;
 }) {
   const session = state.session_id ? state.session_id.slice(-4).toUpperCase() : "0492";
@@ -686,7 +692,9 @@ function AnalystHeader({
         <span>STREAM REACTION INTELLIGENCE - SESSION {session}</span>
         <nav className="header-nav" aria-label="Workspace">
           <button className={route === "/" ? "selected" : ""} type="button" onClick={() => onNavigate("/")}>Dashboard</button>
-          <button className={route === "/eval" ? "selected" : ""} type="button" onClick={() => onNavigate("/eval")}>Eval Lab</button>
+          {evalLabEnabled ? (
+            <button className={route === "/eval" ? "selected" : ""} type="button" onClick={() => onNavigate("/eval")}>Eval Lab</button>
+          ) : null}
         </nav>
       </div>
       <div className="header-right">
@@ -701,7 +709,7 @@ function AnalystHeader({
 }
 
 function routeFromPath(pathname: string): AppRoute {
-  return pathname === "/eval" ? "/eval" : "/";
+  return evalLabEnabled && pathname === "/eval" ? "/eval" : "/";
 }
 
 function errorMessage(error: unknown, fallback: string) {

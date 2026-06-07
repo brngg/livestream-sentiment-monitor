@@ -1,0 +1,131 @@
+services:
+  - type: web
+    name: stream-reaction-live-demo
+    runtime: docker
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeploy: true
+    dockerfilePath: ./services/chat-ingestor-go/Dockerfile.dashboard
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: VITE_ENABLE_EVAL_LAB
+        value: "false"
+      - key: DATABASE_WRITE_ENABLED
+        value: "false"
+      - key: EVENT_BUS_ENABLED
+        value: "false"
+      - key: ANALYSIS_SERVICE_REQUIRED
+        value: "false"
+      - key: PUBLIC_START_ENABLED
+        value: "true"
+      - key: MAX_ACTIVE_SESSIONS
+        value: "1"
+      - key: SESSION_MAX_DURATION
+        value: "10m"
+      - key: DAILY_LIVE_START_LIMIT
+        value: "5"
+      - key: LIVE_SOURCE_ALLOWLIST
+        value: ""
+      - key: NLP_ANALYZER_TIMEOUT
+        value: "1500ms"
+      - key: NLP_ANALYZER_LATE_TIMEOUT
+        value: "10s"
+      - key: NLP_ANALYZER_HOSTPORT
+        fromService:
+          name: stream-reaction-sentiment-live
+          type: pserv
+          property: hostport
+      - key: TRANSCRIPT_INGESTOR_HOSTPORT
+        fromService:
+          name: stream-reaction-transcript-live
+          type: pserv
+          property: hostport
+      - key: TRANSCRIPT_POLL_INTERVAL
+        value: "1s"
+      - key: TRANSCRIPT_BUCKET_SECONDS
+        value: "10"
+      - key: TRANSCRIPT_DEFAULT_CHUNK_SECONDS
+        value: "1"
+      - key: TWITCH_CLIENT_ID
+        sync: false
+      - key: TWITCH_CLIENT_SECRET
+        sync: false
+
+  - type: pserv
+    name: stream-reaction-transcript-live
+    runtime: docker
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./services/transcript-ingestor-cpp
+    healthCheckPath: /health
+    envVars:
+      - key: NLP_ANALYZER_HOSTPORT
+        fromService:
+          name: stream-reaction-sentiment-live
+          type: pserv
+          property: hostport
+      - key: NLP_ANALYZER_TIMEOUT
+        value: "15"
+      - key: TRANSCRIPT_DEFAULT_CHUNK_SECONDS
+        value: "1"
+      - key: TRANSCRIPT_ASR_PROVIDER
+        value: nvidia_streaming
+      - key: TRANSCRIPT_ASR_QUEUE_MAX_DEPTH
+        value: "4"
+      - key: TRANSCRIPT_REPAIR_ENABLED
+        value: "false"
+      - key: CAPTION_ROLLING_WINDOW_SECONDS
+        value: "10"
+      - key: CAPTION_ASR_INTERVAL_SECONDS
+        value: "1"
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_NIM_ASR_FUNCTION_ID
+        value: bb0837de-8c7b-481f-9ec8-ef5663e9c1fa
+      - key: NVIDIA_NIM_ASR_LANGUAGE_CODE
+        value: en-US
+      - key: NVIDIA_NIM_ASR_SERVER
+        value: grpc.nvcf.nvidia.com:443
+
+  - type: pserv
+    name: stream-reaction-sentiment-live
+    runtime: docker
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./services/sentiment-analyzer-python
+    healthCheckPath: /health
+    envVars:
+      - key: SENTIMENT_MODEL
+        value: cardiffnlp/twitter-xlm-roberta-base-sentiment-multilingual
+      - key: SENTIMENT_BATCH_SIZE
+        value: "16"
+      - key: SENTIMENT_TRACE_LIMIT
+        value: "18"
+      - key: SENTIMENT_MAX_MESSAGES
+        value: "32"
+      - key: SENTIMENT_MAX_TEXT_CHARS
+        value: "280"
+      - key: SENTIMENT_DEVICE
+        value: "-1"
+      - key: SENTIMENT_WARMUP
+        value: "true"
+      - key: OMP_NUM_THREADS
+        value: "2"
+      - key: MKL_NUM_THREADS
+        value: "2"
+      - key: OPENBLAS_NUM_THREADS
+        value: "2"
+      - key: NUMEXPR_NUM_THREADS
+        value: "2"
+      - key: VECLIB_MAXIMUM_THREADS
+        value: "2"
+      - key: TOKENIZERS_PARALLELISM
+        value: "false"

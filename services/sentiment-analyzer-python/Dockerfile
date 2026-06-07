@@ -16,4 +16,4 @@ RUN pip install -r requirements.txt
 COPY app ./app
 
 EXPOSE 8091
-CMD ["python", "-m", "app.server", "--host", "0.0.0.0", "--port", "8091"]
+CMD ["sh", "-c", "exec python -m app.server --host 0.0.0.0 --port ${PORT:-8091}"]

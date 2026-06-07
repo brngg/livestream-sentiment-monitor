@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: stream-reaction-replay-demo
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    autoDeploy: true
+    dockerfilePath: ./services/chat-ingestor-go/Dockerfile.dashboard
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: REPLAY_FIXTURE_PATH
+        value: /app/services/chat-ingestor-go/testdata/golden-replay/sessions.json
+      - key: DATABASE_WRITE_ENABLED
+        value: "false"
+      - key: NLP_ANALYZER_URL
+        value: ""
+      - key: TRANSCRIPT_INGESTOR_URL
+        value: ""
+      - key: EVENT_BUS_ENABLED
+        value: "false"
+      - key: ANALYSIS_SERVICE_REQUIRED
+        value: "false"
+      - key: PUBLIC_START_ENABLED
+        value: "false"
+      - key: ADMIN_TOKEN
+        sync: false

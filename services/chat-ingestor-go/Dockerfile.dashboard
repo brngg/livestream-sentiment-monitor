@@ -6,6 +6,8 @@ RUN npm ci
 
 COPY apps/dashboard/index.html apps/dashboard/tsconfig.json apps/dashboard/vite.config.ts ./
 COPY apps/dashboard/src ./src
+ARG VITE_ENABLE_EVAL_LAB=true
+ENV VITE_ENABLE_EVAL_LAB=${VITE_ENABLE_EVAL_LAB}
 RUN npm run build
 
 FROM golang:1.22-bookworm AS go-builder
@@ -26,10 +28,9 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=go-builder /out/chat-dashboard /app/chat-dashboard
 COPY --from=frontend-builder /src/apps/dashboard/dist /app/apps/dashboard/dist
+COPY services/chat-ingestor-go/testdata/golden-replay/sessions.json /app/services/chat-ingestor-go/testdata/golden-replay/sessions.json
 
-ENV FRONTEND_DIR=/app/apps/dashboard/dist \
-    NLP_ANALYZER_URL=http://sentiment-analyzer:8091 \
-    TRANSCRIPT_INGESTOR_URL=http://transcript-ingestor:8092
+ENV FRONTEND_DIR=/app/apps/dashboard/dist
 
 EXPOSE 8090
-CMD ["/app/chat-dashboard", "-addr", ":8090"]
+CMD ["/bin/sh", "-c", "NLP_URL=\"${NLP_ANALYZER_URL:-}\"; if [ -z \"$NLP_URL\" ] && [ -n \"${NLP_ANALYZER_HOSTPORT:-}\" ]; then NLP_URL=\"http://${NLP_ANALYZER_HOSTPORT}\"; fi; TRANSCRIPT_URL=\"${TRANSCRIPT_INGESTOR_URL:-}\"; if [ -z \"$TRANSCRIPT_URL\" ] && [ -n \"${TRANSCRIPT_INGESTOR_HOSTPORT:-}\" ]; then TRANSCRIPT_URL=\"http://${TRANSCRIPT_INGESTOR_HOSTPORT}\"; fi; exec /app/chat-dashboard -addr :${PORT:-8090} -nlp-analyzer-url \"$NLP_URL\" -transcript-url \"$TRANSCRIPT_URL\""]

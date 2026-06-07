@@ -39,8 +39,7 @@ ENV TRANSCRIPT_HOST=0.0.0.0 \
     NVIDIA_NIM_ASR_FUNCTION_ID=bb0837de-8c7b-481f-9ec8-ef5663e9c1fa \
     NVIDIA_NIM_ASR_LANGUAGE_CODE=en-US \
     NVIDIA_NIM_ASR_FILE_STREAMING_CHUNK=1600 \
-    NLP_ANALYZER_URL=http://sentiment-analyzer:8091 \
     NLP_ANALYZER_TIMEOUT=15
 
 EXPOSE 8092
-CMD ["/app/transcript-ingestor"]
+CMD ["/bin/sh", "-c", "export TRANSCRIPT_PORT=${PORT:-8092}; if [ -z \"${NLP_ANALYZER_URL:-}\" ] && [ -n \"${NLP_ANALYZER_HOSTPORT:-}\" ]; then export NLP_ANALYZER_URL=\"http://${NLP_ANALYZER_HOSTPORT}\"; fi; exec /app/transcript-ingestor"]
