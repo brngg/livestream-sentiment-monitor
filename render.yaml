@@ -62,7 +62,6 @@ services:
     autoDeploy: true
     dockerfilePath: ./Dockerfile
     dockerContext: ./services/transcript-ingestor-cpp
-    healthCheckPath: /health
     envVars:
       - key: NLP_ANALYZER_HOSTPORT
         fromService:
@@ -101,7 +100,6 @@ services:
     autoDeploy: true
     dockerfilePath: ./Dockerfile
     dockerContext: ./services/sentiment-analyzer-python
-    healthCheckPath: /health
     envVars:
       - key: SENTIMENT_MODEL
         value: cardiffnlp/twitter-xlm-roberta-base-sentiment-multilingual
