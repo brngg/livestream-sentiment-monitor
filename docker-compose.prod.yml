@@ -1,0 +1,356 @@
+name: ${COMPOSE_PROJECT_NAME:-stream-reaction-prod}
+
+services:
+  reverse-proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      dashboard:
+        condition: service_healthy
+    ports:
+      - "${PUBLIC_HTTP_PORT:-8080}:80"
+    volumes:
+      - ./ops/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - public
+      - app
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  dashboard:
+    image: ${DASHBOARD_IMAGE:-stream-reaction-dashboard:prod-local}
+    build:
+      context: .
+      dockerfile: services/chat-ingestor-go/Dockerfile.dashboard
+    init: true
+    restart: unless-stopped
+    depends_on:
+      sentiment-analyzer:
+        condition: service_healthy
+      transcript-ingestor:
+        condition: service_healthy
+      event-gateway:
+        condition: service_healthy
+      analysis-service:
+        condition: service_healthy
+    environment:
+      FRONTEND_DIR: /app/apps/dashboard/dist
+      NLP_ANALYZER_URL: ${NLP_ANALYZER_URL:-http://sentiment-analyzer:8091}
+      TRANSCRIPT_INGESTOR_URL: ${TRANSCRIPT_INGESTOR_URL:-http://transcript-ingestor:8092}
+      EVENT_GATEWAY_URL: ${EVENT_GATEWAY_URL:-http://event-gateway:8093}
+      ANALYSIS_SERVICE_URL: ${ANALYSIS_SERVICE_URL:-http://analysis-service:8094}
+      EVENT_BUS_ENABLED: ${EVENT_BUS_ENABLED:-true}
+      ANALYSIS_SERVICE_REQUIRED: ${ANALYSIS_SERVICE_REQUIRED:-true}
+      NLP_ANALYZER_TIMEOUT: ${NLP_ANALYZER_TIMEOUT:-5s}
+      NLP_ANALYZER_LATE_TIMEOUT: ${NLP_ANALYZER_LATE_TIMEOUT:-20s}
+      CHAT_BUCKET_EVERY: ${CHAT_BUCKET_EVERY:-10s}
+      TRANSCRIPT_POLL_INTERVAL: ${TRANSCRIPT_POLL_INTERVAL:-1s}
+      TRANSCRIPT_BUCKET_SECONDS: ${TRANSCRIPT_BUCKET_SECONDS:-10}
+      TRANSCRIPT_DEFAULT_CHUNK_SECONDS: ${TRANSCRIPT_DEFAULT_CHUNK_SECONDS:-1}
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
+      TWITCH_APP_ACCESS_TOKEN: ${TWITCH_APP_ACCESS_TOKEN:-}
+      TWITCH_CHANNEL: ${TWITCH_CHANNEL:-}
+      TWITCH_IRC_NICK: ${TWITCH_IRC_NICK:-}
+      TWITCH_IRC_OAUTH_TOKEN: ${TWITCH_IRC_OAUTH_TOKEN:-}
+      DATABASE_URL: ${DATABASE_URL:-}
+      DATABASE_WRITE_ENABLED: ${DATABASE_WRITE_ENABLED:-true}
+      DATABASE_WRITE_TIMEOUT: ${DATABASE_WRITE_TIMEOUT:-10s}
+      DATABASE_WRITE_QUEUE_SIZE: ${DATABASE_WRITE_QUEUE_SIZE:-256}
+      DATABASE_WRITE_MAX_RETRIES: ${DATABASE_WRITE_MAX_RETRIES:-3}
+      DATABASE_HEALTH_FAILURE_THRESHOLD: ${DATABASE_HEALTH_FAILURE_THRESHOLD:-3}
+      CHAT_SAMPLE_LIMIT_PER_BUCKET: ${CHAT_SAMPLE_LIMIT_PER_BUCKET:-10}
+      CHAT_IDENTITY_HASH_SALT: ${CHAT_IDENTITY_HASH_SALT:-replace-with-generated-random-salt}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      EVENT_TOPIC_PREFIX: ${EVENT_TOPIC_PREFIX:-stream-intelligence}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?Set ADMIN_TOKEN for production demo control}
+      PUBLIC_START_ENABLED: ${PUBLIC_START_ENABLED:-false}
+      MAX_ACTIVE_SESSIONS: ${MAX_ACTIVE_SESSIONS:-1}
+      SESSION_MAX_DURATION: ${SESSION_MAX_DURATION:-20m}
+      LIVE_SOURCE_ALLOWLIST: ${LIVE_SOURCE_ALLOWLIST:-}
+      DAILY_LIVE_START_LIMIT: ${DAILY_LIVE_START_LIMIT:-0}
+    expose:
+      - "8090"
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8090/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  sentiment-analyzer:
+    image: ${SENTIMENT_ANALYZER_IMAGE:-stream-reaction-sentiment-analyzer:prod-local}
+    build:
+      context: ./services/sentiment-analyzer-python
+      dockerfile: Dockerfile
+    init: true
+    restart: unless-stopped
+    environment:
+      SENTIMENT_MODEL: ${SENTIMENT_MODEL:-cardiffnlp/twitter-xlm-roberta-base-sentiment-multilingual}
+      SENTIMENT_BATCH_SIZE: ${SENTIMENT_BATCH_SIZE:-16}
+      SENTIMENT_TRACE_LIMIT: ${SENTIMENT_TRACE_LIMIT:-18}
+      SENTIMENT_MAX_MESSAGES: ${SENTIMENT_MAX_MESSAGES:-32}
+      SENTIMENT_MAX_TEXT_CHARS: ${SENTIMENT_MAX_TEXT_CHARS:-280}
+      SENTIMENT_DEVICE: ${SENTIMENT_DEVICE:--1}
+      SENTIMENT_WARMUP: ${SENTIMENT_WARMUP:-true}
+      OMP_NUM_THREADS: ${ML_OMP_NUM_THREADS:-2}
+      MKL_NUM_THREADS: ${ML_MKL_NUM_THREADS:-2}
+      OPENBLAS_NUM_THREADS: ${ML_OPENBLAS_NUM_THREADS:-2}
+      NUMEXPR_NUM_THREADS: ${ML_NUMEXPR_NUM_THREADS:-2}
+      VECLIB_MAXIMUM_THREADS: ${ML_VECLIB_MAXIMUM_THREADS:-2}
+      TOKENIZERS_PARALLELISM: ${TOKENIZERS_PARALLELISM:-false}
+      HF_HOME: /cache/huggingface
+      XDG_CACHE_HOME: /cache
+    cpus: ${SENTIMENT_CPUS:-2.0}
+    volumes:
+      - hf-cache:/cache/huggingface
+    expose:
+      - "8091"
+    networks:
+      - app
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from urllib.request import urlopen; import sys; sys.exit(0 if urlopen('http://127.0.0.1:8091/health', timeout=2).status == 200 else 1)"
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  transcript-ingestor:
+    image: ${TRANSCRIPT_INGESTOR_IMAGE:-stream-reaction-transcript-ingestor:prod-local}
+    build:
+      context: ./services/transcript-ingestor-cpp
+      dockerfile: Dockerfile
+    init: true
+    restart: unless-stopped
+    depends_on:
+      sentiment-analyzer:
+        condition: service_healthy
+    environment:
+      TRANSCRIPT_HOST: 0.0.0.0
+      TRANSCRIPT_PORT: 8092
+      NLP_ANALYZER_URL: ${NLP_ANALYZER_URL:-http://sentiment-analyzer:8091}
+      NLP_ANALYZER_TIMEOUT: ${TRANSCRIPT_NLP_ANALYZER_TIMEOUT:-15}
+      TRANSCRIPT_DEFAULT_CHUNK_SECONDS: ${TRANSCRIPT_DEFAULT_CHUNK_SECONDS:-1}
+      TRANSCRIPT_ASR_PROVIDER: ${TRANSCRIPT_ASR_PROVIDER:-nvidia_streaming}
+      TRANSCRIPT_ASR_QUEUE_MAX_DEPTH: ${TRANSCRIPT_ASR_QUEUE_MAX_DEPTH:-4}
+      TRANSCRIPT_REPAIR_ENABLED: ${TRANSCRIPT_REPAIR_ENABLED:-false}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      NVIDIA_NIM_ASR_PYTHON: ${NVIDIA_NIM_ASR_PYTHON:-python3}
+      NVIDIA_NIM_ASR_HELPER: ${NVIDIA_NIM_ASR_HELPER:-/app/scripts/nvidia_asr_transcribe.py}
+      NVIDIA_NIM_ASR_STREAMING_HELPER: ${NVIDIA_NIM_ASR_STREAMING_HELPER:-/app/scripts/nvidia_live_stream_asr.py}
+      NVIDIA_NIM_ASR_SERVER: ${NVIDIA_NIM_ASR_SERVER:-grpc.nvcf.nvidia.com:443}
+      NVIDIA_NIM_ASR_FUNCTION_ID: ${NVIDIA_NIM_ASR_FUNCTION_ID:-}
+      NVIDIA_NIM_ASR_MODEL_NAME: ${NVIDIA_NIM_ASR_MODEL_NAME:-}
+      NVIDIA_NIM_ASR_LANGUAGE_CODE: ${NVIDIA_NIM_ASR_LANGUAGE_CODE:-en-US}
+      NVIDIA_NIM_ASR_FILE_STREAMING_CHUNK: ${NVIDIA_NIM_ASR_FILE_STREAMING_CHUNK:-1600}
+      CAPTION_ROLLING_WINDOW_SECONDS: ${CAPTION_ROLLING_WINDOW_SECONDS:-10}
+      CAPTION_ASR_INTERVAL_SECONDS: ${CAPTION_ASR_INTERVAL_SECONDS:-1}
+    cpus: ${TRANSCRIPT_CPUS:-6.0}
+    expose:
+      - "8092"
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD-SHELL", "command -v ffmpeg >/dev/null && command -v streamlink >/dev/null && curl -fsS http://127.0.0.1:8092/health >/dev/null"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  event-gateway:
+    image: ${EVENT_GATEWAY_IMAGE:-stream-reaction-event-gateway:prod-local}
+    build:
+      context: ./services/chat-ingestor-go
+      dockerfile: Dockerfile.service
+      args:
+        CMD_PATH: ./cmd/event-gateway
+        BINARY_NAME: event-gateway
+    init: true
+    restart: unless-stopped
+    depends_on:
+      redpanda-init:
+        condition: service_completed_successfully
+    environment:
+      EVENT_GATEWAY_ADDR: ${EVENT_GATEWAY_ADDR:-:8093}
+      EVENT_GATEWAY_KAFKA_BROKERS: ${EVENT_GATEWAY_KAFKA_BROKERS:-redpanda:9092}
+      EVENT_GATEWAY_KAFKA_CLIENT_ID: ${EVENT_GATEWAY_KAFKA_CLIENT_ID:-stream-event-gateway}
+      EVENT_GATEWAY_PUBLISH_TIMEOUT: ${EVENT_GATEWAY_PUBLISH_TIMEOUT:-5s}
+      EVENT_GATEWAY_SHUTDOWN_TIMEOUT: ${EVENT_GATEWAY_SHUTDOWN_TIMEOUT:-5s}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      EVENT_TOPIC_PREFIX: ${EVENT_TOPIC_PREFIX:-stream-intelligence}
+      DATABASE_URL: ${DATABASE_URL:-}
+    expose:
+      - "8093"
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8093/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  analysis-service:
+    image: ${ANALYSIS_SERVICE_IMAGE:-stream-reaction-analysis-service:prod-local}
+    build:
+      context: ./services/chat-ingestor-go
+      dockerfile: Dockerfile.service
+      args:
+        CMD_PATH: ./cmd/analysis-service
+        BINARY_NAME: analysis-service
+    init: true
+    restart: unless-stopped
+    depends_on:
+      redpanda-init:
+        condition: service_completed_successfully
+      event-gateway:
+        condition: service_healthy
+      sentiment-analyzer:
+        condition: service_healthy
+    environment:
+      ANALYSIS_ADDR: ${ANALYSIS_ADDR:-:8094}
+      ANALYSIS_ALIGNMENT_WINDOW: ${ANALYSIS_ALIGNMENT_WINDOW:-30s}
+      ANALYSIS_STORAGE_TIMEOUT: ${ANALYSIS_STORAGE_TIMEOUT:-2s}
+      ANALYSIS_MAX_BUCKETS_PER_SESSION: ${ANALYSIS_MAX_BUCKETS_PER_SESSION:-500}
+      EVENT_BUS_ENABLED: ${EVENT_BUS_ENABLED:-true}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      EVENT_TOPIC_PREFIX: ${EVENT_TOPIC_PREFIX:-stream-intelligence}
+      NLP_ANALYZER_URL: ${NLP_ANALYZER_URL:-http://sentiment-analyzer:8091}
+      DATABASE_URL: ${DATABASE_URL:-}
+    expose:
+      - "8094"
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8094/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  redpanda:
+    image: ${REDPANDA_IMAGE:-redpandadata/redpanda:v24.3.5}
+    restart: unless-stopped
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --reserve-memory=0M
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:${REDPANDA_EXTERNAL_PORT:-19092}
+      - --rpc-addr=0.0.0.0:33145
+      - --advertise-rpc-addr=redpanda:33145
+      - --pandaproxy-addr=0.0.0.0:8082
+      - --schema-registry-addr=0.0.0.0:8081
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    ports:
+      - "127.0.0.1:${REDPANDA_EXTERNAL_PORT:-19092}:19092"
+    networks:
+      - app
+      - observability
+
+  redpanda-init:
+    image: ${REDPANDA_IMAGE:-redpandadata/redpanda:v24.3.5}
+    depends_on:
+      redpanda:
+        condition: service_started
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        until rpk cluster info --brokers redpanda:9092 >/dev/null 2>&1; do
+          sleep 1
+        done
+        for topic in stream.chat_buckets.v1 stream.transcript_buckets.v1 stream.analysis_results.v1 stream.system_metrics.v1; do
+          rpk topic create "$$topic" --brokers redpanda:9092 || true
+        done
+    networks:
+      - app
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/blackbox_exporter/config.yml
+    volumes:
+      - ./ops/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    expose:
+      - "9115"
+    networks:
+      - app
+      - observability
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    depends_on:
+      blackbox-exporter:
+        condition: service_started
+      redpanda:
+        condition: service_started
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    volumes:
+      - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - app
+      - observability
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    restart: unless-stopped
+    depends_on:
+      prometheus:
+        condition: service_started
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-replace-with-generated-grafana-admin-password}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000/}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./ops/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./ops/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./ops/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    networks:
+      - observability
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+networks:
+  public:
+  app:
+  observability:
+
+volumes:
+  hf-cache:
+  redpanda-data:
+  prometheus-data:
+  grafana-data:

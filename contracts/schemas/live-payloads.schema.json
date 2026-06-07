@@ -1,0 +1,769 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stream-reaction-intelligence.local/contracts/live-payloads.schema.json",
+  "title": "Stream Reaction Intelligence live payload contracts",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "chat_bucket": { "$ref": "#/$defs/ChatBucket" },
+    "transcript_bucket": { "$ref": "#/$defs/TranscriptBucket" },
+    "transcript_update": { "$ref": "#/$defs/TranscriptUpdate" },
+    "alignment_bucket": { "$ref": "#/$defs/AlignmentBucket" },
+    "dashboard_event": { "$ref": "#/$defs/DashboardEvent" },
+    "transcript_state": { "$ref": "#/$defs/TranscriptState" },
+    "signal_window": { "$ref": "#/$defs/SignalWindow" }
+  },
+  "$defs": {
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "NullableTimestamp": {
+      "anyOf": [
+        { "$ref": "#/$defs/Timestamp" },
+        { "type": "null" }
+      ]
+    },
+    "Score": {
+      "type": "number",
+      "minimum": -1,
+      "maximum": 1
+    },
+    "Confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "StringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "LanguageMix": {
+      "type": "object",
+      "additionalProperties": { "type": "number" }
+    },
+    "ChatMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "session_id",
+        "channel_id",
+        "message_id",
+        "timestamp",
+        "username",
+        "display_name",
+        "text",
+        "language",
+        "is_mod",
+        "is_bot_likely"
+      ],
+      "properties": {
+        "session_id": { "type": "string" },
+        "channel_id": { "type": "string" },
+        "message_id": { "type": "string" },
+        "timestamp": { "$ref": "#/$defs/Timestamp" },
+        "username": { "type": "string" },
+        "display_name": { "type": "string" },
+        "text": { "type": "string" },
+        "emotes": { "$ref": "#/$defs/StringArray" },
+        "badges": { "$ref": "#/$defs/StringArray" },
+        "language": { "type": "string" },
+        "is_mod": { "type": "boolean" },
+        "is_bot_likely": { "type": "boolean" }
+      }
+    },
+    "MessageScore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "message_id",
+        "text",
+        "label",
+        "confidence",
+        "sentiment_score"
+      ],
+      "properties": {
+        "message_id": { "type": "string" },
+        "timestamp": { "$ref": "#/$defs/Timestamp" },
+        "username": { "type": "string" },
+        "display_name": { "type": "string" },
+        "text": { "type": "string" },
+        "label": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/Confidence" },
+        "sentiment_score": { "$ref": "#/$defs/Score" },
+        "human_label": { "type": "string" }
+      }
+    },
+    "ReactionSubwindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "window_start",
+        "window_end",
+        "message_count",
+        "reaction_score",
+        "hype_score",
+        "intensity_score",
+        "confusion_score",
+        "frustration_score",
+        "reaction_type",
+        "target_type",
+        "source",
+        "confidence"
+      ],
+      "properties": {
+        "window_start": { "$ref": "#/$defs/Timestamp" },
+        "window_end": { "$ref": "#/$defs/Timestamp" },
+        "message_count": { "type": "integer", "minimum": 0 },
+        "reaction_score": { "$ref": "#/$defs/Confidence" },
+        "hype_score": { "$ref": "#/$defs/Confidence" },
+        "intensity_score": { "$ref": "#/$defs/Confidence" },
+        "confusion_score": { "$ref": "#/$defs/Confidence" },
+        "frustration_score": { "$ref": "#/$defs/Confidence" },
+        "reaction_type": { "type": "string" },
+        "target_type": { "type": "string" },
+        "target_text": { "type": "string" },
+        "divergence_type": { "type": "string" },
+        "event_start": { "$ref": "#/$defs/Timestamp" },
+        "event_peak": { "$ref": "#/$defs/Timestamp" },
+        "source": { "type": "string" },
+        "event_hint": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/Confidence" },
+        "evidence_ids": { "$ref": "#/$defs/StringArray" }
+      }
+    },
+    "ChatBucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "session_id",
+        "channel_id",
+        "bucket_start",
+        "bucket_end",
+        "message_count",
+        "unique_chatters",
+        "chat_sentiment",
+        "sentiment_confidence",
+        "analyzed_count",
+        "positive",
+        "neutral",
+        "negative",
+        "peak_reaction_score",
+        "peak_reaction_type",
+        "peak_time",
+        "peak_window_start",
+        "peak_window_end",
+        "subwindows",
+        "peak_evidence_messages"
+      ],
+      "properties": {
+        "type": { "const": "chat_bucket" },
+        "session_id": { "type": "string" },
+        "channel_id": { "type": "string" },
+        "bucket_start": { "$ref": "#/$defs/Timestamp" },
+        "bucket_end": { "$ref": "#/$defs/Timestamp" },
+        "message_count": { "type": "integer", "minimum": 0 },
+        "unique_chatters": { "type": "integer", "minimum": 0 },
+        "chat_sentiment": { "$ref": "#/$defs/Score" },
+        "sentiment_confidence": { "$ref": "#/$defs/Confidence" },
+        "analyzed_count": { "type": "integer", "minimum": 0 },
+        "analysis_status": { "type": "string" },
+        "sentiment_model": { "type": "string" },
+        "positive": { "$ref": "#/$defs/Confidence" },
+        "neutral": { "$ref": "#/$defs/Confidence" },
+        "negative": { "$ref": "#/$defs/Confidence" },
+        "analysis_latency_ms": { "type": "integer", "minimum": 0 },
+        "language_mix": { "$ref": "#/$defs/LanguageMix" },
+        "top_terms": { "$ref": "#/$defs/StringArray" },
+        "top_emotes": { "$ref": "#/$defs/StringArray" },
+        "message_scores": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MessageScore" }
+        },
+        "peak_reaction_score": {
+          "anyOf": [
+            { "$ref": "#/$defs/Confidence" },
+            { "type": "null" }
+          ]
+        },
+        "peak_reaction_type": { "type": "string" },
+        "peak_target_type": { "type": "string" },
+        "peak_target_text": { "type": "string" },
+        "peak_source": { "type": "string" },
+        "peak_event_hint": { "type": "string" },
+        "peak_confidence": { "$ref": "#/$defs/Confidence" },
+        "peak_evidence_ids": { "$ref": "#/$defs/StringArray" },
+        "peak_time": { "$ref": "#/$defs/NullableTimestamp" },
+        "peak_window_start": { "$ref": "#/$defs/NullableTimestamp" },
+        "peak_window_end": { "$ref": "#/$defs/NullableTimestamp" },
+        "subwindows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ReactionSubwindow" }
+        },
+        "peak_evidence_messages": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ChatMessage" }
+        }
+      }
+    },
+    "TranscriptWord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "text"],
+      "properties": {
+        "start": { "type": "number" },
+        "end": { "type": "number" },
+        "text": { "type": "string" },
+        "probability": {
+          "anyOf": [
+            { "$ref": "#/$defs/Confidence" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "TranscriptQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "raw_segment_count": { "type": "integer", "minimum": 0 },
+        "retained_segment_count": { "type": "integer", "minimum": 0 },
+        "dropped_low_confidence_count": { "type": "integer", "minimum": 0 },
+        "dropped_repeat_count": { "type": "integer", "minimum": 0 },
+        "retained_ratio": { "$ref": "#/$defs/Confidence" },
+        "language_probability": {
+          "anyOf": [
+            { "$ref": "#/$defs/Confidence" },
+            { "type": "null" }
+          ]
+        },
+        "stable": { "type": "boolean" },
+        "backpressure": { "type": "boolean" },
+        "source_partial_text": { "type": "string" },
+        "source": { "type": "string" },
+        "final": { "type": "boolean" },
+        "repaired": { "type": "boolean" },
+        "audio_coverage_seconds": { "type": "number", "minimum": 0 },
+        "bucket_duration_seconds": { "type": "number", "minimum": 0 },
+        "char_count": { "type": "integer", "minimum": 0 },
+        "word_count": { "type": "integer", "minimum": 0 },
+        "repair_latency_ms": { "type": "integer", "minimum": 0 },
+        "repair_action": { "type": "string" }
+      }
+    },
+    "TranscriptSegment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "text"],
+      "properties": {
+        "type": { "type": "string" },
+        "session_id": { "type": "string" },
+        "channel_id": { "type": "string" },
+        "transcript_start": { "$ref": "#/$defs/Timestamp" },
+        "transcript_end": { "$ref": "#/$defs/Timestamp" },
+        "audio_started_at": { "$ref": "#/$defs/NullableTimestamp" },
+        "audio_ended_at": { "$ref": "#/$defs/NullableTimestamp" },
+        "transcribed_at": { "$ref": "#/$defs/NullableTimestamp" },
+        "asr_latency_ms": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "pipeline_latency_ms": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "start": { "type": "number" },
+        "end": { "type": "number" },
+        "text": { "type": "string" },
+        "language": { "type": "string" },
+        "confidence": {
+          "anyOf": [
+            { "$ref": "#/$defs/Confidence" },
+            { "type": "null" }
+          ]
+        },
+        "transcript_confidence": { "$ref": "#/$defs/Confidence" },
+        "words": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TranscriptWord" }
+        },
+        "quality": { "$ref": "#/$defs/TranscriptQuality" }
+      }
+    },
+    "TranscriptUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "session_id",
+        "channel_id",
+        "transcript_start",
+        "transcript_end",
+        "audio_started_at",
+        "audio_ended_at",
+        "transcribed_at",
+        "asr_latency_ms",
+        "pipeline_latency_ms",
+        "text",
+        "language",
+        "transcript_confidence",
+        "segments",
+        "quality"
+      ],
+      "properties": {
+        "type": { "enum": ["transcript_partial", "transcript_segment"] },
+        "session_id": { "type": "string" },
+        "channel_id": { "type": "string" },
+        "transcript_start": { "$ref": "#/$defs/Timestamp" },
+        "transcript_end": { "$ref": "#/$defs/Timestamp" },
+        "audio_started_at": { "$ref": "#/$defs/NullableTimestamp" },
+        "audio_ended_at": { "$ref": "#/$defs/NullableTimestamp" },
+        "transcribed_at": { "$ref": "#/$defs/NullableTimestamp" },
+        "asr_latency_ms": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "pipeline_latency_ms": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "text": { "type": "string" },
+        "language": { "type": "string" },
+        "transcript_confidence": { "$ref": "#/$defs/Confidence" },
+        "segments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TranscriptSegment" }
+        },
+        "quality": { "$ref": "#/$defs/TranscriptQuality" }
+      }
+    },
+    "TranscriptBucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "session_id",
+        "channel_id",
+        "bucket_start",
+        "bucket_end",
+        "text",
+        "language",
+        "transcript_confidence",
+        "sentiment_score",
+        "sentiment_confidence",
+        "sentiment_label",
+        "sentiment_model",
+        "sentiment_status",
+        "sentiment_latency_ms"
+      ],
+      "properties": {
+        "type": { "const": "transcript_bucket" },
+        "session_id": { "type": "string" },
+        "channel_id": { "type": "string" },
+        "bucket_start": { "$ref": "#/$defs/Timestamp" },
+        "bucket_end": { "$ref": "#/$defs/Timestamp" },
+        "audio_started_at": { "$ref": "#/$defs/NullableTimestamp" },
+        "audio_ended_at": { "$ref": "#/$defs/NullableTimestamp" },
+        "transcribed_at": { "$ref": "#/$defs/NullableTimestamp" },
+        "asr_latency_ms": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "pipeline_latency_ms": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "text": { "type": "string" },
+        "language": { "type": "string" },
+        "transcript_confidence": { "$ref": "#/$defs/Confidence" },
+        "transcript_status": { "type": "string" },
+        "sentiment_score": {
+          "anyOf": [
+            { "$ref": "#/$defs/Score" },
+            { "type": "null" }
+          ]
+        },
+        "sentiment_confidence": {
+          "anyOf": [
+            { "$ref": "#/$defs/Confidence" },
+            { "type": "null" }
+          ]
+        },
+        "sentiment_label": { "type": "string" },
+        "sentiment_model": { "type": "string" },
+        "sentiment_status": { "type": "string" },
+        "sentiment_latency_ms": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "audio_seconds": { "type": "number", "minimum": 0 },
+        "segment_count": { "type": "integer", "minimum": 0 },
+        "word_count": { "type": "integer", "minimum": 0 },
+        "empty_ratio": { "$ref": "#/$defs/Confidence" },
+        "repair_added_words": { "type": "integer", "minimum": 0 },
+        "repair_changed_ratio": { "$ref": "#/$defs/Confidence" },
+        "segments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TranscriptSegment" }
+        },
+        "quality": { "$ref": "#/$defs/TranscriptQuality" }
+      }
+    },
+    "AlignmentBucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "session_id",
+        "channel_id",
+        "window_start",
+        "window_end",
+        "chat_bucket_start",
+        "chat_bucket_end",
+        "transcript_bucket_start",
+        "transcript_bucket_end",
+        "chat_sentiment",
+        "chat_confidence",
+        "chat_message_count",
+        "transcript_sentiment",
+        "transcript_confidence",
+        "transcript_text_length",
+        "delta",
+        "similarity",
+        "relationship",
+        "overlap_seconds",
+        "quality",
+        "quality_flags"
+      ],
+      "properties": {
+        "type": { "const": "alignment_bucket" },
+        "session_id": { "type": "string" },
+        "channel_id": { "type": "string" },
+        "window_start": { "$ref": "#/$defs/Timestamp" },
+        "window_end": { "$ref": "#/$defs/Timestamp" },
+        "chat_bucket_start": { "$ref": "#/$defs/Timestamp" },
+        "chat_bucket_end": { "$ref": "#/$defs/Timestamp" },
+        "transcript_bucket_start": { "$ref": "#/$defs/Timestamp" },
+        "transcript_bucket_end": { "$ref": "#/$defs/Timestamp" },
+        "chat_sentiment": { "$ref": "#/$defs/Score" },
+        "chat_confidence": { "$ref": "#/$defs/Confidence" },
+        "chat_message_count": { "type": "integer", "minimum": 0 },
+        "transcript_sentiment": { "$ref": "#/$defs/Score" },
+        "transcript_confidence": { "$ref": "#/$defs/Confidence" },
+        "transcript_text_length": { "type": "integer", "minimum": 0 },
+        "delta": { "type": "number" },
+        "similarity": { "$ref": "#/$defs/Confidence" },
+        "relationship": { "type": "string" },
+        "overlap_seconds": { "type": "integer", "minimum": 0 },
+        "quality": { "$ref": "#/$defs/Confidence" },
+        "quality_flags": { "$ref": "#/$defs/StringArray" }
+      }
+    },
+    "SignalEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "severity", "timestamp", "source", "confidence"],
+      "properties": {
+        "type": { "type": "string" },
+        "source": { "type": "string" },
+        "timestamp": { "$ref": "#/$defs/Timestamp" },
+        "severity": { "type": "number" },
+        "label": { "type": "string" },
+        "reaction_type": { "type": "string" },
+        "target_type": { "type": "string" },
+        "target_text": { "type": "string" },
+        "event_hint": { "type": "string" },
+        "text": { "type": "string" },
+        "score": { "type": "number" },
+        "confidence": { "$ref": "#/$defs/Confidence" },
+        "weight": { "type": "number" },
+        "evidence_ids": { "$ref": "#/$defs/StringArray" },
+        "meta": { "type": "object" },
+        "message": { "$ref": "#/$defs/MessageScore" },
+        "transcript_segment": { "$ref": "#/$defs/TranscriptSegment" }
+      }
+    },
+    "SignalWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "session_id",
+        "channel_id",
+        "source",
+        "stream_id",
+        "window_start",
+        "window_end",
+        "message_count",
+        "unique_chatters",
+        "chat_sentiment",
+        "chat_confidence",
+        "sentiment_confidence",
+        "positive",
+        "neutral",
+        "negative",
+        "target_type",
+        "confidence"
+      ],
+      "properties": {
+        "type": { "const": "signal_window" },
+        "session_id": { "type": "string" },
+        "channel_id": { "type": "string" },
+        "source": { "type": "string" },
+        "stream_id": { "type": "string" },
+        "window_start": { "$ref": "#/$defs/Timestamp" },
+        "window_end": { "$ref": "#/$defs/Timestamp" },
+        "message_count": { "type": "integer", "minimum": 0 },
+        "unique_chatters": { "type": "integer", "minimum": 0 },
+        "chat_sentiment": { "$ref": "#/$defs/Score" },
+        "chat_confidence": { "$ref": "#/$defs/Confidence" },
+        "sentiment_confidence": { "$ref": "#/$defs/Confidence" },
+        "positive": { "$ref": "#/$defs/Confidence" },
+        "neutral": { "$ref": "#/$defs/Confidence" },
+        "negative": { "$ref": "#/$defs/Confidence" },
+        "previous_sentiment": {
+          "anyOf": [
+            { "$ref": "#/$defs/Score" },
+            { "type": "null" }
+          ]
+        },
+        "chat_message_count": { "type": "integer", "minimum": 0 },
+        "transcript_sentiment": {
+          "anyOf": [
+            { "$ref": "#/$defs/Score" },
+            { "type": "null" }
+          ]
+        },
+        "transcript_confidence": {
+          "anyOf": [
+            { "$ref": "#/$defs/Confidence" },
+            { "type": "null" }
+          ]
+        },
+        "transcript_text_length": { "type": "integer", "minimum": 0 },
+        "aggregate_sentiment": {
+          "anyOf": [
+            { "$ref": "#/$defs/Score" },
+            { "type": "null" }
+          ]
+        },
+        "alignment_delta": {
+          "anyOf": [
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "delta": {
+          "anyOf": [
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "similarity": {
+          "anyOf": [
+            { "$ref": "#/$defs/Confidence" },
+            { "type": "null" }
+          ]
+        },
+        "relationship": { "type": "string" },
+        "alignment_quality": {
+          "anyOf": [
+            { "$ref": "#/$defs/Confidence" },
+            { "type": "null" }
+          ]
+        },
+        "quality": {
+          "anyOf": [
+            { "$ref": "#/$defs/Confidence" },
+            { "type": "null" }
+          ]
+        },
+        "quality_flags": { "$ref": "#/$defs/StringArray" },
+        "first_event_type": { "type": "string" },
+        "reaction_type": { "type": "string" },
+        "target_type": { "type": "string" },
+        "target_text": { "type": "string" },
+        "event_hint": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/Confidence" },
+        "evidence_ids": { "$ref": "#/$defs/StringArray" },
+        "events": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SignalEvent" }
+        }
+      }
+    },
+    "StreamInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "title": { "type": "string" },
+        "game": { "type": "string" },
+        "viewer_count": { "type": "integer", "minimum": 0 },
+        "started_at": { "type": "string" },
+        "language": { "type": "string" },
+        "thumbnail_url": { "type": "string" }
+      }
+    },
+    "DashboardEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string" },
+        "status": { "type": "string" },
+        "session_id": { "type": "string" },
+        "channel": { "type": "string" },
+        "stream": { "$ref": "#/$defs/StreamInfo" },
+        "message": { "$ref": "#/$defs/ChatMessage" },
+        "bucket": { "$ref": "#/$defs/ChatBucket" },
+        "transcript_bucket": { "$ref": "#/$defs/TranscriptBucket" },
+        "reaction_window": { "$ref": "#/$defs/ReactionWindow" },
+        "alignments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AlignmentBucket" }
+        },
+        "signal_windows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SignalWindow" }
+        },
+        "signal_events": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SignalEvent" }
+        },
+        "error": { "type": "string" }
+      }
+    },
+    "ReactionWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "session_id",
+        "channel_id",
+        "source",
+        "window_start",
+        "window_end",
+        "message_count",
+        "unique_chatters",
+        "messages_per_minute",
+        "velocity_score",
+        "hype_score",
+        "intensity_score",
+        "confusion_score",
+        "frustration_score",
+        "valence",
+        "reaction_type",
+        "target_type",
+        "confidence",
+        "evidence_ids",
+        "evidence_messages"
+      ],
+      "properties": {
+        "type": { "const": "reaction_window" },
+        "session_id": { "type": "string" },
+        "channel_id": { "type": "string" },
+        "source": { "type": "string" },
+        "provisional": { "type": "boolean" },
+        "window_start": { "$ref": "#/$defs/Timestamp" },
+        "window_end": { "$ref": "#/$defs/Timestamp" },
+        "message_count": { "type": "integer", "minimum": 0 },
+        "unique_chatters": { "type": "integer", "minimum": 0 },
+        "messages_per_minute": { "type": "number", "minimum": 0 },
+        "velocity_score": { "$ref": "#/$defs/Confidence" },
+        "hype_score": { "$ref": "#/$defs/Confidence" },
+        "intensity_score": { "$ref": "#/$defs/Confidence" },
+        "confusion_score": { "$ref": "#/$defs/Confidence" },
+        "frustration_score": { "$ref": "#/$defs/Confidence" },
+        "valence": { "$ref": "#/$defs/Score" },
+        "reaction_type": { "type": "string" },
+        "target_type": { "type": "string" },
+        "target_text": { "type": "string" },
+        "event_hint": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/Confidence" },
+        "evidence_ids": { "$ref": "#/$defs/StringArray" },
+        "transcript_text": { "type": "string" },
+        "transcript_confidence": { "$ref": "#/$defs/Confidence" },
+        "sentiment_confidence": { "$ref": "#/$defs/Confidence" },
+        "evidence_messages": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ChatMessage" }
+        }
+      }
+    },
+    "TranscriptState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "mode"],
+      "properties": {
+        "mode": { "type": "string" },
+        "status": { "type": "string" },
+        "session_id": { "type": "string" },
+        "channel_id": { "type": "string" },
+        "bucket_seconds": { "type": "number" },
+        "chunk_seconds": { "type": "number" },
+        "segment_count": { "type": "integer", "minimum": 0 },
+        "bucket_count": { "type": "integer", "minimum": 0 },
+        "error": { "type": "string" },
+        "partial_count": { "type": "integer", "minimum": 0 },
+        "caption": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "rolling_window_seconds": { "type": "number" },
+            "asr_interval_seconds": { "type": "number" },
+            "stability_passes": { "type": "integer", "minimum": 0 },
+            "rolling_buffer_seconds": { "type": "number" },
+            "commit_lag_seconds": { "type": "number" }
+          }
+        },
+        "partials": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TranscriptUpdate" }
+        },
+        "segments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TranscriptUpdate" }
+        },
+        "buckets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TranscriptBucket" }
+        },
+        "latest_partial": {
+          "anyOf": [
+            { "$ref": "#/$defs/TranscriptUpdate" },
+            { "type": "null" }
+          ]
+        },
+        "latest_segment": {
+          "anyOf": [
+            { "$ref": "#/$defs/TranscriptUpdate" },
+            { "type": "null" }
+          ]
+        },
+        "latest_bucket": {
+          "anyOf": [
+            { "$ref": "#/$defs/TranscriptBucket" },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}

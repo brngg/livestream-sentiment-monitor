@@ -1,0 +1,35 @@
+FROM node:24-bookworm-slim AS frontend-builder
+
+WORKDIR /src/apps/dashboard
+COPY apps/dashboard/package.json apps/dashboard/package-lock.json ./
+RUN npm ci
+
+COPY apps/dashboard/index.html apps/dashboard/tsconfig.json apps/dashboard/vite.config.ts ./
+COPY apps/dashboard/src ./src
+RUN npm run build
+
+FROM golang:1.22-bookworm AS go-builder
+
+WORKDIR /src/services/chat-ingestor-go
+COPY services/chat-ingestor-go/go.mod services/chat-ingestor-go/go.sum ./
+RUN go mod download
+
+COPY services/chat-ingestor-go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/chat-dashboard ./cmd/chat-dashboard
+
+FROM debian:bookworm-slim AS runtime
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=go-builder /out/chat-dashboard /app/chat-dashboard
+COPY --from=frontend-builder /src/apps/dashboard/dist /app/apps/dashboard/dist
+
+ENV FRONTEND_DIR=/app/apps/dashboard/dist \
+    NLP_ANALYZER_URL=http://sentiment-analyzer:8091 \
+    TRANSCRIPT_INGESTOR_URL=http://transcript-ingestor:8092
+
+EXPOSE 8090
+CMD ["/app/chat-dashboard", "-addr", ":8090"]

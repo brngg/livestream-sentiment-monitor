@@ -1,0 +1,25 @@
+FROM golang:1.22-bookworm AS builder
+
+ARG CMD_PATH=./cmd/event-gateway
+ARG BINARY_NAME=service
+
+WORKDIR /src/services/chat-ingestor-go
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/${BINARY_NAME} ${CMD_PATH}
+
+FROM debian:bookworm-slim AS runtime
+
+ARG BINARY_NAME=service
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /out/${BINARY_NAME} /app/service
+
+EXPOSE 8093 8094
+CMD ["/app/service"]

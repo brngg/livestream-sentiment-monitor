@@ -1,0 +1,650 @@
+{
+  "golden_hype_peak": {
+    "session": {
+      "session_id": "golden_hype_peak",
+      "channel_id": "demo_channel",
+      "status": "ended",
+      "started_at": "2026-05-08T12:00:00Z",
+      "chat_bucket_count": 2,
+      "transcript_bucket_count": 2,
+      "alignment_count": 1,
+      "label_count": 3
+    },
+    "chat_buckets": [
+      {
+        "type": "chat_bucket",
+        "session_id": "golden_hype_peak",
+        "channel_id": "demo_channel",
+        "bucket_start": "2026-05-08T12:00:00Z",
+        "bucket_end": "2026-05-08T12:00:30Z",
+        "message_count": 42,
+        "unique_chatters": 28,
+        "chat_sentiment": 0.72,
+        "sentiment_confidence": 0.88,
+        "positive": 0.76,
+        "neutral": 0.2,
+        "negative": 0.04,
+        "analysis_latency_ms": 24,
+        "analysis_status": "python",
+        "top_terms": ["clutch", "phase", "boss"],
+        "message_scores": [
+          {
+            "message_id": "hype-m1",
+            "timestamp": "2026-05-08T12:00:10Z",
+            "username": "viewer_a",
+            "text": "NO WAY CLUTCH",
+            "label": "positive",
+            "confidence": 0.95,
+            "sentiment_score": 0.91
+          }
+        ],
+        "peak_reaction_score": 0.91,
+        "peak_reaction_type": "hype",
+        "peak_target_type": "unknown",
+        "peak_target_text": "boss phase",
+        "peak_source": "chat",
+        "peak_event_hint": "hype:boss phase",
+        "peak_confidence": 0.88,
+        "peak_evidence_ids": ["hype-m1"],
+        "peak_time": "2026-05-08T12:00:12Z",
+        "peak_window_start": "2026-05-08T12:00:08Z",
+        "peak_window_end": "2026-05-08T12:00:13Z",
+        "subwindows": [
+          {
+            "window_start": "2026-05-08T12:00:08Z",
+            "window_end": "2026-05-08T12:00:13Z",
+            "message_count": 18,
+            "reaction_score": 0.91,
+            "hype_score": 0.91,
+            "intensity_score": 0.84,
+            "confusion_score": 0.02,
+            "frustration_score": 0.01,
+            "reaction_type": "hype",
+            "target_type": "unknown",
+            "target_text": "boss phase",
+            "source": "chat",
+            "event_hint": "hype:boss phase",
+            "confidence": 0.88,
+            "evidence_ids": ["hype-m1"]
+          }
+        ],
+        "peak_evidence_messages": [
+          {
+            "session_id": "golden_hype_peak",
+            "channel_id": "demo_channel",
+            "message_id": "hype-m1",
+            "timestamp": "2026-05-08T12:00:10Z",
+            "username": "viewer_a",
+            "text": "NO WAY CLUTCH",
+            "language": "en"
+          }
+        ]
+      },
+      {
+        "type": "chat_bucket",
+        "session_id": "golden_hype_peak",
+        "channel_id": "demo_channel",
+        "bucket_start": "2026-05-08T12:00:30Z",
+        "bucket_end": "2026-05-08T12:01:00Z",
+        "message_count": 16,
+        "unique_chatters": 12,
+        "chat_sentiment": 0.08,
+        "sentiment_confidence": 0.74,
+        "positive": 0.22,
+        "neutral": 0.7,
+        "negative": 0.08,
+        "analysis_latency_ms": 20,
+        "analysis_status": "python",
+        "subwindows": [],
+        "peak_evidence_messages": []
+      }
+    ],
+    "transcript_buckets": [
+      {
+        "type": "transcript_bucket",
+        "session_id": "golden_hype_peak",
+        "channel_id": "demo_channel",
+        "bucket_start": "2026-05-08T12:00:00Z",
+        "bucket_end": "2026-05-08T12:00:30Z",
+        "text": "That boss phase was perfectly timed.",
+        "language": "en",
+        "transcript_confidence": 0.92,
+        "sentiment_score": 0.36,
+        "sentiment_confidence": 0.81,
+        "sentiment_label": "positive",
+        "sentiment_status": "python",
+        "sentiment_latency_ms": 118,
+        "asr_latency_ms": 820,
+        "pipeline_latency_ms": 980,
+        "transcript_status": "final",
+        "audio_seconds": 27,
+        "segment_count": 1,
+        "word_count": 6,
+        "empty_ratio": 0,
+        "repair_added_words": 1,
+        "repair_changed_ratio": 0.2,
+        "segments": [
+          {
+            "start": 0,
+            "end": 3.1,
+            "text": "That boss phase was perfectly timed.",
+            "confidence": 0.92,
+            "words": [
+              { "start": 0, "end": 0.4, "text": "That", "probability": 0.96 },
+              { "start": 0.5, "end": 0.9, "text": "boss", "probability": 0.93 }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "transcript_bucket",
+        "session_id": "golden_hype_peak",
+        "channel_id": "demo_channel",
+        "bucket_start": "2026-05-08T12:00:30Z",
+        "bucket_end": "2026-05-08T12:01:00Z",
+        "text": "We can reset and prepare for the next pull.",
+        "language": "en",
+        "transcript_confidence": 0.89,
+        "sentiment_score": 0.05,
+        "sentiment_confidence": 0.77,
+        "sentiment_label": "neutral",
+        "sentiment_status": "python",
+        "sentiment_latency_ms": 105,
+        "asr_latency_ms": 790,
+        "pipeline_latency_ms": 920,
+        "transcript_status": "final",
+        "audio_seconds": 30,
+        "segment_count": 1,
+        "word_count": 9,
+        "empty_ratio": 0
+      }
+    ],
+    "alignments": [
+      {
+        "type": "alignment_bucket",
+        "session_id": "golden_hype_peak",
+        "channel_id": "demo_channel",
+        "window_start": "2026-05-08T12:00:00Z",
+        "window_end": "2026-05-08T12:00:30Z",
+        "chat_bucket_start": "2026-05-08T12:00:00Z",
+        "chat_bucket_end": "2026-05-08T12:00:30Z",
+        "transcript_bucket_start": "2026-05-08T12:00:00Z",
+        "transcript_bucket_end": "2026-05-08T12:00:30Z",
+        "chat_sentiment": 0.72,
+        "chat_confidence": 0.88,
+        "chat_message_count": 42,
+        "transcript_sentiment": 0.36,
+        "transcript_confidence": 0.81,
+        "transcript_text_length": 36,
+        "delta": 0.36,
+        "similarity": 0.62,
+        "relationship": "soft_split",
+        "overlap_seconds": 30,
+        "quality": 0.82,
+        "quality_flags": []
+      }
+    ],
+    "window_labels": [
+      {
+        "session_id": "golden_hype_peak",
+        "window_start": "2026-05-08T12:00:08Z",
+        "window_end": "2026-05-08T12:00:13Z",
+        "predicted_event": "hype_spike",
+        "correctness": "correct",
+        "event_label": "hype_spike",
+        "reaction_type": "hype",
+        "target_type": "unknown",
+        "target_text": "boss phase",
+        "event_start": "2026-05-08T12:00:08Z",
+        "event_peak": "2026-05-08T12:00:12Z",
+        "notes": "Short chat burst on the boss phase."
+      },
+      {
+        "session_id": "golden_hype_peak",
+        "window_start": "2026-05-08T12:00:00Z",
+        "window_end": "2026-05-08T12:00:30Z",
+        "predicted_event": "hype_spike",
+        "correctness": "correct",
+        "event_label": "hype_spike",
+        "notes": "Backwards-compatible 30s label."
+      },
+      {
+        "session_id": "golden_hype_peak",
+        "window_start": "2026-05-08T12:00:30Z",
+        "window_end": "2026-05-08T12:01:00Z",
+        "predicted_event": "none",
+        "correctness": "correct",
+        "event_label": "none",
+        "notes": "Normal chat after the moment."
+      }
+    ],
+    "agent_reviews": [
+      {
+        "review_id": "golden-prescore:hype:bucket-120000",
+        "run_id": "golden-prescore-2026-05-09",
+        "session_id": "golden_hype_peak",
+        "window_start": "2026-05-08T12:00:00Z",
+        "window_end": "2026-05-08T12:00:30Z",
+        "source_window_type": "chat_bucket_30s",
+        "reviewer": "subagent-prescore",
+        "model": "codex-subagent",
+        "prompt_version": "stream-evaluation-v1",
+        "status": "suggested",
+        "predicted_event": "hype_spike",
+        "suggested_event_label": "hype_spike",
+        "correctness": "correct",
+        "reaction_type": "hype",
+        "target_type": "unknown",
+        "target_text": "boss phase",
+        "event_start": "2026-05-08T12:00:08Z",
+        "event_peak": "2026-05-08T12:00:12Z",
+        "confidence": 0.92,
+        "streamer_usefulness": 0.9,
+        "reason": "High-volume positive chat with a concentrated hype subwindow tied to the boss phase. The transcript also references the same boss phase positively, so this is a clear hype moment rather than a divergence.",
+        "evidence": [
+          { "id": "hype-m1", "source": "chat", "timestamp": "2026-05-08T12:00:10Z", "text": "NO WAY CLUTCH" },
+          { "id": "subwindow", "source": "reaction", "text": "18 messages, hype_score 0.91, intensity_score 0.84" },
+          { "id": "transcript_bucket", "source": "transcript", "text": "That boss phase was perfectly timed." },
+          { "id": "alignment", "source": "alignment", "text": "delta=0.36, relationship=soft_split, quality=0.82" }
+        ],
+        "notes": "Agrees with the existing human label."
+      },
+      {
+        "review_id": "golden-prescore:hype:reaction-120008",
+        "run_id": "golden-prescore-2026-05-09",
+        "session_id": "golden_hype_peak",
+        "window_start": "2026-05-08T12:00:08Z",
+        "window_end": "2026-05-08T12:00:13Z",
+        "source_window_type": "reaction_subwindow",
+        "reviewer": "subagent-prescore",
+        "model": "codex-subagent",
+        "prompt_version": "stream-evaluation-v1",
+        "status": "suggested",
+        "predicted_event": "hype_spike",
+        "suggested_event_label": "hype_spike",
+        "correctness": "correct",
+        "reaction_type": "hype",
+        "target_type": "unknown",
+        "target_text": "boss phase",
+        "event_start": "2026-05-08T12:00:08Z",
+        "event_peak": "2026-05-08T12:00:12Z",
+        "confidence": 0.94,
+        "streamer_usefulness": 0.95,
+        "reason": "The five-second reaction window is a dense positive burst with high hype and intensity, minimal confusion or frustration, and direct peak evidence.",
+        "evidence": [
+          { "id": "hype-m1", "source": "chat", "timestamp": "2026-05-08T12:00:10Z", "text": "NO WAY CLUTCH" },
+          { "id": "subwindow", "source": "reaction", "text": "message_count=18, reaction_score=0.91, hype_score=0.91" },
+          { "id": "scores", "source": "reaction", "text": "confusion_score=0.02, frustration_score=0.01" }
+        ],
+        "notes": "Strongest validation target in the fixture."
+      },
+      {
+        "review_id": "golden-prescore:hype:bucket-120030",
+        "run_id": "golden-prescore-2026-05-09",
+        "session_id": "golden_hype_peak",
+        "window_start": "2026-05-08T12:00:30Z",
+        "window_end": "2026-05-08T12:01:00Z",
+        "source_window_type": "chat_bucket_30s",
+        "reviewer": "subagent-prescore",
+        "model": "codex-subagent",
+        "prompt_version": "stream-evaluation-v1",
+        "status": "suggested",
+        "predicted_event": "none",
+        "suggested_event_label": "none",
+        "correctness": "correct",
+        "confidence": 0.84,
+        "streamer_usefulness": 0.1,
+        "reason": "Lower-volume mostly neutral chat with no reaction subwindows or peak evidence. The transcript is reset and prep language, not a reaction moment.",
+        "evidence": [
+          { "id": "chat_bucket", "source": "chat", "text": "16 messages, sentiment=0.08, neutral=0.70" },
+          { "id": "transcript_bucket", "source": "transcript", "text": "We can reset and prepare for the next pull." }
+        ],
+        "notes": "Agrees with the existing normal-chat label."
+      }
+    ],
+    "system_metrics": [
+      { "session_id": "golden_hype_peak", "name": "storage.write_failures", "value": 0, "unit": "writes", "recorded_at": "2026-05-08T12:01:01Z" },
+      { "session_id": "golden_hype_peak", "name": "storage.dropped_writes", "value": 0, "unit": "writes", "recorded_at": "2026-05-08T12:01:01Z" },
+      { "session_id": "golden_hype_peak", "name": "storage.queue_depth", "value": 0, "unit": "writes", "recorded_at": "2026-05-08T12:01:01Z" },
+      { "session_id": "golden_hype_peak", "name": "reaction_window.count", "value": 1, "unit": "windows", "recorded_at": "2026-05-08T12:01:01Z" }
+    ],
+    "label_count": 3
+  },
+  "golden_confusion_alignment": {
+    "session": {
+      "session_id": "golden_confusion_alignment",
+      "channel_id": "demo_channel",
+      "status": "ended",
+      "started_at": "2026-05-08T13:00:00Z",
+      "chat_bucket_count": 1,
+      "transcript_bucket_count": 1,
+      "alignment_count": 1,
+      "label_count": 2
+    },
+    "chat_buckets": [
+      {
+        "type": "chat_bucket",
+        "session_id": "golden_confusion_alignment",
+        "channel_id": "demo_channel",
+        "bucket_start": "2026-05-08T13:00:00Z",
+        "bucket_end": "2026-05-08T13:00:30Z",
+        "message_count": 31,
+        "unique_chatters": 24,
+        "chat_sentiment": -0.08,
+        "sentiment_confidence": 0.8,
+        "positive": 0.16,
+        "neutral": 0.7,
+        "negative": 0.14,
+        "analysis_latency_ms": 22,
+        "analysis_status": "python",
+        "peak_reaction_score": 0.74,
+        "peak_reaction_type": "confusion",
+        "peak_target_type": "unknown",
+        "peak_target_text": "rule change",
+        "peak_source": "chat",
+        "peak_event_hint": "confusion:rule change",
+        "peak_confidence": 0.78,
+        "peak_evidence_ids": ["conf-m1"],
+        "peak_time": "2026-05-08T13:00:18Z",
+        "peak_window_start": "2026-05-08T13:00:14Z",
+        "peak_window_end": "2026-05-08T13:00:19Z",
+        "subwindows": [
+          {
+            "window_start": "2026-05-08T13:00:14Z",
+            "window_end": "2026-05-08T13:00:19Z",
+            "message_count": 15,
+            "reaction_score": 0.74,
+            "hype_score": 0.05,
+            "intensity_score": 0.6,
+            "confusion_score": 0.74,
+            "frustration_score": 0.08,
+            "reaction_type": "confusion",
+            "target_type": "unknown",
+            "target_text": "rule change",
+            "source": "chat",
+            "event_hint": "confusion:rule change",
+            "confidence": 0.78,
+            "evidence_ids": ["conf-m1"]
+          }
+        ],
+        "peak_evidence_messages": [
+          {
+            "session_id": "golden_confusion_alignment",
+            "channel_id": "demo_channel",
+            "message_id": "conf-m1",
+            "timestamp": "2026-05-08T13:00:16Z",
+            "username": "viewer_b",
+            "text": "WAIT WHAT HAPPENED???",
+            "language": "en"
+          }
+        ]
+      }
+    ],
+    "transcript_buckets": [
+      {
+        "type": "transcript_bucket",
+        "session_id": "golden_confusion_alignment",
+        "channel_id": "demo_channel",
+        "bucket_start": "2026-05-08T13:00:00Z",
+        "bucket_end": "2026-05-08T13:00:30Z",
+        "text": "The rules changed because the timer expired.",
+        "language": "en",
+        "transcript_confidence": 0.91,
+        "sentiment_score": 0.02,
+        "sentiment_confidence": 0.82,
+        "sentiment_label": "neutral",
+        "sentiment_status": "python",
+        "sentiment_latency_ms": 112,
+        "asr_latency_ms": 810,
+        "pipeline_latency_ms": 970,
+        "transcript_status": "final",
+        "audio_seconds": 28,
+        "segment_count": 1,
+        "word_count": 7,
+        "empty_ratio": 0,
+        "repair_added_words": 2,
+        "repair_changed_ratio": 0.3333
+      }
+    ],
+    "alignments": [
+      {
+        "type": "alignment_bucket",
+        "session_id": "golden_confusion_alignment",
+        "channel_id": "demo_channel",
+        "window_start": "2026-05-08T13:00:00Z",
+        "window_end": "2026-05-08T13:00:30Z",
+        "chat_bucket_start": "2026-05-08T13:00:00Z",
+        "chat_bucket_end": "2026-05-08T13:00:30Z",
+        "transcript_bucket_start": "2026-05-08T13:00:00Z",
+        "transcript_bucket_end": "2026-05-08T13:00:30Z",
+        "chat_sentiment": -0.08,
+        "chat_confidence": 0.8,
+        "chat_message_count": 31,
+        "transcript_sentiment": 0.02,
+        "transcript_confidence": 0.82,
+        "transcript_text_length": 42,
+        "delta": -0.1,
+        "similarity": 0.45,
+        "relationship": "converged",
+        "overlap_seconds": 30,
+        "quality": 0.86,
+        "quality_flags": []
+      }
+    ],
+    "window_labels": [
+      {
+        "session_id": "golden_confusion_alignment",
+        "window_start": "2026-05-08T13:00:14Z",
+        "window_end": "2026-05-08T13:00:19Z",
+        "predicted_event": "audience_shift",
+        "correctness": "correct",
+        "event_label": "audience_shift",
+        "reaction_type": "confusion",
+        "target_type": "unknown",
+        "target_text": "rule change",
+        "event_start": "2026-05-08T13:00:14Z",
+        "event_peak": "2026-05-08T13:00:18Z",
+        "notes": "Short confusion burst on rules."
+      },
+      {
+        "session_id": "golden_confusion_alignment",
+        "window_start": "2026-05-08T13:00:00Z",
+        "window_end": "2026-05-08T13:00:30Z",
+        "predicted_event": "none",
+        "correctness": "correct",
+        "event_label": "none",
+        "notes": "30s bucket stays neutral while short reaction carries the event."
+      }
+    ],
+    "agent_reviews": [
+      {
+        "review_id": "golden-prescore:confusion:bucket-130000",
+        "run_id": "golden-prescore-2026-05-09",
+        "session_id": "golden_confusion_alignment",
+        "window_start": "2026-05-08T13:00:00Z",
+        "window_end": "2026-05-08T13:00:30Z",
+        "source_window_type": "chat_bucket_30s",
+        "reviewer": "subagent-prescore",
+        "model": "codex-subagent",
+        "prompt_version": "stream-evaluation-v1",
+        "status": "suggested",
+        "predicted_event": "none",
+        "suggested_event_label": "none",
+        "correctness": "correct",
+        "reaction_type": "confusion",
+        "target_type": "unknown",
+        "target_text": "rule change",
+        "confidence": 0.82,
+        "streamer_usefulness": 0.25,
+        "reason": "The full 30-second bucket is mostly neutral: chat sentiment is slightly negative, transcript sentiment is neutral, and alignment is converged. The confusion is real but localized to the shorter subwindow.",
+        "evidence": [
+          { "id": "conf-m1", "source": "chat", "timestamp": "2026-05-08T13:00:16Z", "text": "WAIT WHAT HAPPENED???" },
+          { "id": "transcript_bucket", "source": "transcript", "text": "The rules changed because the timer expired." },
+          { "id": "alignment", "source": "alignment", "text": "relationship=converged, similarity=0.45, quality=0.86" }
+        ],
+        "notes": "Agrees with the existing 30-second none label."
+      },
+      {
+        "review_id": "golden-prescore:confusion:reaction-130014",
+        "run_id": "golden-prescore-2026-05-09",
+        "session_id": "golden_confusion_alignment",
+        "window_start": "2026-05-08T13:00:14Z",
+        "window_end": "2026-05-08T13:00:19Z",
+        "source_window_type": "reaction_subwindow",
+        "reviewer": "subagent-prescore",
+        "model": "codex-subagent",
+        "prompt_version": "stream-evaluation-v1",
+        "status": "suggested",
+        "predicted_event": "audience_shift",
+        "suggested_event_label": "audience_shift",
+        "correctness": "correct",
+        "reaction_type": "confusion",
+        "target_type": "unknown",
+        "target_text": "rule change",
+        "event_start": "2026-05-08T13:00:14Z",
+        "event_peak": "2026-05-08T13:00:18Z",
+        "confidence": 0.78,
+        "streamer_usefulness": 0.8,
+        "reason": "Short concentrated confusion burst: 15 messages, reaction score 0.74, confusion score 0.74, intensity 0.60, and low hype/frustration. The transcript explains a rule change, making this useful as an audience-clarity moment.",
+        "evidence": [
+          { "id": "conf-m1", "source": "chat", "timestamp": "2026-05-08T13:00:16Z", "text": "WAIT WHAT HAPPENED???" },
+          { "id": "subwindow", "source": "reaction", "text": "event_hint=confusion:rule change, target_text=rule change" },
+          { "id": "transcript_bucket", "source": "transcript", "text": "The rules changed because the timer expired." }
+        ],
+        "notes": "Agrees with the existing short-window audience-shift label."
+      }
+    ],
+    "system_metrics": [
+      { "session_id": "golden_confusion_alignment", "name": "storage.write_failures", "value": 0, "unit": "writes", "recorded_at": "2026-05-08T13:00:31Z" },
+      { "session_id": "golden_confusion_alignment", "name": "storage.dropped_writes", "value": 0, "unit": "writes", "recorded_at": "2026-05-08T13:00:31Z" },
+      { "session_id": "golden_confusion_alignment", "name": "storage.queue_depth", "value": 0, "unit": "writes", "recorded_at": "2026-05-08T13:00:31Z" },
+      { "session_id": "golden_confusion_alignment", "name": "reaction_window.count", "value": 1, "unit": "windows", "recorded_at": "2026-05-08T13:00:31Z" }
+    ],
+    "label_count": 2
+  },
+  "golden_normal_chat": {
+    "session": {
+      "session_id": "golden_normal_chat",
+      "channel_id": "demo_channel",
+      "status": "ended",
+      "started_at": "2026-05-08T14:00:00Z",
+      "chat_bucket_count": 1,
+      "transcript_bucket_count": 1,
+      "alignment_count": 1,
+      "label_count": 1
+    },
+    "chat_buckets": [
+      {
+        "type": "chat_bucket",
+        "session_id": "golden_normal_chat",
+        "channel_id": "demo_channel",
+        "bucket_start": "2026-05-08T14:00:00Z",
+        "bucket_end": "2026-05-08T14:00:30Z",
+        "message_count": 12,
+        "unique_chatters": 10,
+        "chat_sentiment": 0.04,
+        "sentiment_confidence": 0.76,
+        "positive": 0.18,
+        "neutral": 0.74,
+        "negative": 0.08,
+        "analysis_latency_ms": 18,
+        "analysis_status": "python",
+        "subwindows": [],
+        "peak_evidence_messages": []
+      }
+    ],
+    "transcript_buckets": [
+      {
+        "type": "transcript_bucket",
+        "session_id": "golden_normal_chat",
+        "channel_id": "demo_channel",
+        "bucket_start": "2026-05-08T14:00:00Z",
+        "bucket_end": "2026-05-08T14:00:30Z",
+        "text": "We are waiting for the next queue.",
+        "language": "en",
+        "transcript_confidence": 0.87,
+        "sentiment_score": 0.03,
+        "sentiment_confidence": 0.8,
+        "sentiment_label": "neutral",
+        "sentiment_status": "python",
+        "sentiment_latency_ms": 96,
+        "asr_latency_ms": 760,
+        "pipeline_latency_ms": 900,
+        "transcript_status": "final",
+        "audio_seconds": 30,
+        "segment_count": 1,
+        "word_count": 7,
+        "empty_ratio": 0
+      }
+    ],
+    "alignments": [
+      {
+        "type": "alignment_bucket",
+        "session_id": "golden_normal_chat",
+        "channel_id": "demo_channel",
+        "window_start": "2026-05-08T14:00:00Z",
+        "window_end": "2026-05-08T14:00:30Z",
+        "chat_bucket_start": "2026-05-08T14:00:00Z",
+        "chat_bucket_end": "2026-05-08T14:00:30Z",
+        "transcript_bucket_start": "2026-05-08T14:00:00Z",
+        "transcript_bucket_end": "2026-05-08T14:00:30Z",
+        "chat_sentiment": 0.04,
+        "chat_confidence": 0.76,
+        "chat_message_count": 12,
+        "transcript_sentiment": 0.03,
+        "transcript_confidence": 0.8,
+        "transcript_text_length": 34,
+        "delta": 0.01,
+        "similarity": 0.9,
+        "relationship": "converged",
+        "overlap_seconds": 30,
+        "quality": 0.88,
+        "quality_flags": []
+      }
+    ],
+    "window_labels": [
+      {
+        "session_id": "golden_normal_chat",
+        "window_start": "2026-05-08T14:00:00Z",
+        "window_end": "2026-05-08T14:00:30Z",
+        "predicted_event": "none",
+        "correctness": "correct",
+        "event_label": "none",
+        "notes": "False-positive guard for normal chat."
+      }
+    ],
+    "agent_reviews": [
+      {
+        "review_id": "golden-prescore:normal:bucket-140000",
+        "run_id": "golden-prescore-2026-05-09",
+        "session_id": "golden_normal_chat",
+        "window_start": "2026-05-08T14:00:00Z",
+        "window_end": "2026-05-08T14:00:30Z",
+        "source_window_type": "chat_bucket_30s",
+        "reviewer": "subagent-prescore",
+        "model": "codex-subagent",
+        "prompt_version": "stream-evaluation-v1",
+        "status": "suggested",
+        "predicted_event": "none",
+        "suggested_event_label": "none",
+        "correctness": "correct",
+        "confidence": 0.94,
+        "streamer_usefulness": 0.05,
+        "reason": "Chat is low-volume and mostly neutral. The transcript is also neutral and routine, alignment is converged with a tiny delta, and no reaction subwindows or peak evidence indicate a spike or divergence.",
+        "evidence": [
+          { "id": "chat_bucket", "source": "chat", "text": "12 messages, sentiment=0.04, neutral=0.74" },
+          { "id": "transcript_bucket", "source": "transcript", "text": "We are waiting for the next queue." },
+          { "id": "alignment", "source": "alignment", "text": "delta=0.01, similarity=0.90, relationship=converged" }
+        ],
+        "notes": "Agrees with the existing false-positive guard label."
+      }
+    ],
+    "system_metrics": [
+      { "session_id": "golden_normal_chat", "name": "storage.write_failures", "value": 0, "unit": "writes", "recorded_at": "2026-05-08T14:00:31Z" },
+      { "session_id": "golden_normal_chat", "name": "storage.dropped_writes", "value": 0, "unit": "writes", "recorded_at": "2026-05-08T14:00:31Z" },
+      { "session_id": "golden_normal_chat", "name": "storage.queue_depth", "value": 0, "unit": "writes", "recorded_at": "2026-05-08T14:00:31Z" },
+      { "session_id": "golden_normal_chat", "name": "reaction_window.count", "value": 0, "unit": "windows", "recorded_at": "2026-05-08T14:00:31Z" }
+    ],
+    "label_count": 1
+  }
+}

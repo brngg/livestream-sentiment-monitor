@@ -1,0 +1,247 @@
+services:
+  redpanda:
+    image: redpandadata/redpanda:v24.3.5
+    restart: unless-stopped
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --reserve-memory=0M
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:${REDPANDA_EXTERNAL_PORT:-19092}
+      - --rpc-addr=0.0.0.0:33145
+      - --advertise-rpc-addr=redpanda:33145
+    ports:
+      - "127.0.0.1:${REDPANDA_EXTERNAL_PORT:-19092}:19092"
+
+  redpanda-init:
+    image: redpandadata/redpanda:v24.3.5
+    depends_on:
+      redpanda:
+        condition: service_started
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        until rpk cluster info --brokers redpanda:9092 >/dev/null 2>&1; do
+          sleep 1
+        done
+        for topic in stream.chat_buckets.v1 stream.transcript_buckets.v1 stream.analysis_results.v1 stream.system_metrics.v1; do
+          rpk topic create "$$topic" --brokers redpanda:9092 || true
+        done
+
+  sentiment-analyzer:
+    build:
+      context: ./services/sentiment-analyzer-python
+      dockerfile: Dockerfile
+    init: true
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    environment:
+      SENTIMENT_MODEL: ${SENTIMENT_MODEL:-cardiffnlp/twitter-xlm-roberta-base-sentiment-multilingual}
+      SENTIMENT_BATCH_SIZE: ${SENTIMENT_BATCH_SIZE:-16}
+      SENTIMENT_TRACE_LIMIT: ${SENTIMENT_TRACE_LIMIT:-18}
+      SENTIMENT_MAX_MESSAGES: ${SENTIMENT_MAX_MESSAGES:-32}
+      SENTIMENT_MAX_TEXT_CHARS: ${SENTIMENT_MAX_TEXT_CHARS:-280}
+      SENTIMENT_DEVICE: ${SENTIMENT_DEVICE:--1}
+      SENTIMENT_WARMUP: ${SENTIMENT_WARMUP:-true}
+      OMP_NUM_THREADS: ${ML_OMP_NUM_THREADS:-2}
+      MKL_NUM_THREADS: ${ML_MKL_NUM_THREADS:-2}
+      OPENBLAS_NUM_THREADS: ${ML_OPENBLAS_NUM_THREADS:-2}
+      NUMEXPR_NUM_THREADS: ${ML_NUMEXPR_NUM_THREADS:-2}
+      VECLIB_MAXIMUM_THREADS: ${ML_VECLIB_MAXIMUM_THREADS:-2}
+      TOKENIZERS_PARALLELISM: ${TOKENIZERS_PARALLELISM:-false}
+      HF_HOME: /cache/huggingface
+      XDG_CACHE_HOME: /cache
+    cpus: ${SENTIMENT_CPUS:-2.0}
+    ports:
+      - "${SENTIMENT_PORT:-8091}:8091"
+    volumes:
+      - hf-cache:/cache/huggingface
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from urllib.request import urlopen; import sys; sys.exit(0 if urlopen('http://127.0.0.1:8091/health', timeout=2).status == 200 else 1)"
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  transcript-ingestor:
+    build:
+      context: ./services/transcript-ingestor-cpp
+      dockerfile: Dockerfile
+    init: true
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    depends_on:
+      sentiment-analyzer:
+        condition: service_healthy
+    environment:
+      TRANSCRIPT_HOST: 0.0.0.0
+      TRANSCRIPT_PORT: 8092
+      NLP_ANALYZER_URL: ${NLP_ANALYZER_URL:-http://sentiment-analyzer:8091}
+      NLP_ANALYZER_TIMEOUT: ${TRANSCRIPT_NLP_ANALYZER_TIMEOUT:-15}
+      TRANSCRIPT_DEFAULT_CHUNK_SECONDS: ${TRANSCRIPT_DEFAULT_CHUNK_SECONDS:-1}
+      TRANSCRIPT_ASR_PROVIDER: ${TRANSCRIPT_ASR_PROVIDER:-nvidia_streaming}
+      TRANSCRIPT_ASR_QUEUE_MAX_DEPTH: ${TRANSCRIPT_ASR_QUEUE_MAX_DEPTH:-4}
+      TRANSCRIPT_REPAIR_ENABLED: ${TRANSCRIPT_REPAIR_ENABLED:-false}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      NVIDIA_NIM_ASR_PYTHON: ${NVIDIA_NIM_ASR_PYTHON:-python3}
+      NVIDIA_NIM_ASR_HELPER: ${NVIDIA_NIM_ASR_HELPER:-/app/scripts/nvidia_asr_transcribe.py}
+      NVIDIA_NIM_ASR_STREAMING_HELPER: ${NVIDIA_NIM_ASR_STREAMING_HELPER:-/app/scripts/nvidia_live_stream_asr.py}
+      NVIDIA_NIM_ASR_SERVER: ${NVIDIA_NIM_ASR_SERVER:-grpc.nvcf.nvidia.com:443}
+      NVIDIA_NIM_ASR_FUNCTION_ID: ${NVIDIA_NIM_ASR_FUNCTION_ID:-bb0837de-8c7b-481f-9ec8-ef5663e9c1fa}
+      NVIDIA_NIM_ASR_MODEL_NAME: ${NVIDIA_NIM_ASR_MODEL_NAME:-}
+      NVIDIA_NIM_ASR_LANGUAGE_CODE: ${NVIDIA_NIM_ASR_LANGUAGE_CODE:-en-US}
+      NVIDIA_NIM_ASR_FILE_STREAMING_CHUNK: ${NVIDIA_NIM_ASR_FILE_STREAMING_CHUNK:-1600}
+      CAPTION_ROLLING_WINDOW_SECONDS: ${CAPTION_ROLLING_WINDOW_SECONDS:-10}
+      CAPTION_ASR_INTERVAL_SECONDS: ${CAPTION_ASR_INTERVAL_SECONDS:-1}
+    cpus: ${TRANSCRIPT_CPUS:-6.0}
+    ports:
+      - "${TRANSCRIPT_PORT:-8092}:8092"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "command -v ffmpeg >/dev/null && command -v streamlink >/dev/null && curl -fsS http://127.0.0.1:8092/health >/dev/null"
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: services/chat-ingestor-go/Dockerfile.dashboard
+    init: true
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    depends_on:
+      sentiment-analyzer:
+        condition: service_healthy
+      transcript-ingestor:
+        condition: service_healthy
+      event-gateway:
+        condition: service_healthy
+      analysis-service:
+        condition: service_healthy
+    environment:
+      FRONTEND_DIR: /app/apps/dashboard/dist
+      NLP_ANALYZER_URL: ${NLP_ANALYZER_URL:-http://sentiment-analyzer:8091}
+      TRANSCRIPT_INGESTOR_URL: ${TRANSCRIPT_INGESTOR_URL:-http://transcript-ingestor:8092}
+      EVENT_GATEWAY_URL: ${EVENT_GATEWAY_URL:-http://event-gateway:8093}
+      ANALYSIS_SERVICE_URL: ${ANALYSIS_SERVICE_URL:-http://analysis-service:8094}
+      EVENT_BUS_ENABLED: ${EVENT_BUS_ENABLED:-true}
+      ANALYSIS_SERVICE_REQUIRED: ${ANALYSIS_SERVICE_REQUIRED:-true}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      PUBLIC_START_ENABLED: ${PUBLIC_START_ENABLED:-true}
+      MAX_ACTIVE_SESSIONS: ${MAX_ACTIVE_SESSIONS:-1}
+      SESSION_MAX_DURATION: ${SESSION_MAX_DURATION:-20m}
+      LIVE_SOURCE_ALLOWLIST: ${LIVE_SOURCE_ALLOWLIST:-}
+      DAILY_LIVE_START_LIMIT: ${DAILY_LIVE_START_LIMIT:-0}
+      NLP_ANALYZER_TIMEOUT: ${NLP_ANALYZER_TIMEOUT:-5s}
+      NLP_ANALYZER_LATE_TIMEOUT: ${NLP_ANALYZER_LATE_TIMEOUT:-20s}
+      CHAT_BUCKET_EVERY: ${CHAT_BUCKET_EVERY:-10s}
+      TRANSCRIPT_POLL_INTERVAL: ${TRANSCRIPT_POLL_INTERVAL:-1s}
+      TRANSCRIPT_BUCKET_SECONDS: ${TRANSCRIPT_BUCKET_SECONDS:-10}
+      TRANSCRIPT_DEFAULT_CHUNK_SECONDS: ${TRANSCRIPT_DEFAULT_CHUNK_SECONDS:-5}
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
+      TWITCH_APP_ACCESS_TOKEN: ${TWITCH_APP_ACCESS_TOKEN:-}
+      TWITCH_CHANNEL: ${TWITCH_CHANNEL:-}
+      TWITCH_IRC_NICK: ${TWITCH_IRC_NICK:-}
+      TWITCH_IRC_OAUTH_TOKEN: ${TWITCH_IRC_OAUTH_TOKEN:-}
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL to your Neon Postgres connection string}
+      DATABASE_WRITE_ENABLED: ${DATABASE_WRITE_ENABLED:-true}
+      DATABASE_WRITE_TIMEOUT: ${DATABASE_WRITE_TIMEOUT:-10s}
+      CHAT_SAMPLE_LIMIT_PER_BUCKET: ${CHAT_SAMPLE_LIMIT_PER_BUCKET:-10}
+      CHAT_IDENTITY_HASH_SALT: ${CHAT_IDENTITY_HASH_SALT:-local-dev-only-change-me}
+    ports:
+      - "${DASHBOARD_PORT:-8090}:8090"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -fsS
+        - http://127.0.0.1:8090/health
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  event-gateway:
+    build:
+      context: ./services/chat-ingestor-go
+      dockerfile: Dockerfile.service
+      args:
+        CMD_PATH: ./cmd/event-gateway
+        BINARY_NAME: event-gateway
+    init: true
+    restart: unless-stopped
+    depends_on:
+      redpanda-init:
+        condition: service_completed_successfully
+    environment:
+      EVENT_GATEWAY_ADDR: :8093
+      EVENT_GATEWAY_KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      EVENT_GATEWAY_KAFKA_CLIENT_ID: stream-event-gateway
+      EVENT_GATEWAY_PUBLISH_TIMEOUT: ${EVENT_GATEWAY_PUBLISH_TIMEOUT:-5s}
+    ports:
+      - "${EVENT_GATEWAY_PORT:-8093}:8093"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -fsS
+        - http://127.0.0.1:8093/health
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  analysis-service:
+    build:
+      context: ./services/chat-ingestor-go
+      dockerfile: Dockerfile.service
+      args:
+        CMD_PATH: ./cmd/analysis-service
+        BINARY_NAME: analysis-service
+    init: true
+    restart: unless-stopped
+    depends_on:
+      redpanda-init:
+        condition: service_completed_successfully
+    environment:
+      ANALYSIS_ADDR: :8094
+      ANALYSIS_ALIGNMENT_WINDOW: ${ANALYSIS_ALIGNMENT_WINDOW:-10s}
+      ANALYSIS_STORAGE_TIMEOUT: ${ANALYSIS_STORAGE_TIMEOUT:-2s}
+      ANALYSIS_MAX_BUCKETS_PER_SESSION: ${ANALYSIS_MAX_BUCKETS_PER_SESSION:-500}
+      EVENT_BUS_ENABLED: ${EVENT_BUS_ENABLED:-true}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      DATABASE_URL: ${DATABASE_URL:-}
+    ports:
+      - "${ANALYSIS_PORT:-8094}:8094"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -fsS
+        - http://127.0.0.1:8094/health
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  hf-cache:

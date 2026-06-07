@@ -1,0 +1,109 @@
+{
+  "generated_at": "2026-05-11T00:00:00Z",
+  "limitations": [
+    "Seed rows are intentionally small and are not a statistically meaningful evaluation set.",
+    "Metrics remain pending for manifests without model_output fields.",
+    "ASR WER remains pending until audio_uri values and ASR hypotheses are supplied."
+  ],
+  "manifest_count": 3,
+  "manifest_dir": "eval",
+  "manifests": [
+    {
+      "expected_model_output_fields": [
+        "model_output.label",
+        "model_output.score",
+        "model_output.confidence"
+      ],
+      "label_counts": {
+        "negative": 1,
+        "neutral": 2,
+        "positive": 2
+      },
+      "manifest": "sentiment_chat_labels.jsonl",
+      "metrics": {
+        "accuracy": null,
+        "evaluated_records": 0,
+        "status": "pending_model_outputs",
+        "unsupported_reason": "No model_output label fields are present in the seed manifest."
+      },
+      "missing_model_output_examples": [
+        "sent_chat_seed_001",
+        "sent_chat_seed_002",
+        "sent_chat_seed_003",
+        "sent_chat_seed_004",
+        "sent_chat_seed_005"
+      ],
+      "model_outputs_missing": 5,
+      "model_outputs_present": 0,
+      "records": 5,
+      "task": "chat_sentiment"
+    },
+    {
+      "expected_model_output_fields": [
+        "model_output.event_label",
+        "model_output.relationship",
+        "model_output.confidence"
+      ],
+      "label_counts": {
+        "audience_shift": 1,
+        "content_audience_divergence": 1,
+        "frustration_spike": 1,
+        "hype_spike": 1,
+        "none": 1
+      },
+      "manifest": "signal_window_labels.jsonl",
+      "metrics": {
+        "accuracy": null,
+        "evaluated_records": 0,
+        "status": "pending_model_outputs",
+        "unsupported_reason": "No model_output label fields are present in the seed manifest."
+      },
+      "missing_model_output_examples": [
+        "signal_seed_001",
+        "signal_seed_002",
+        "signal_seed_003",
+        "signal_seed_004",
+        "signal_seed_005"
+      ],
+      "model_outputs_missing": 5,
+      "model_outputs_present": 0,
+      "records": 5,
+      "task": "signal_window_event"
+    },
+    {
+      "audio_available": 0,
+      "audio_missing": 4,
+      "expected_model_output_fields": [
+        "model_output.text",
+        "model_output.confidence",
+        "model_output.asr_latency_ms"
+      ],
+      "label_counts": {
+        "en-US": 4
+      },
+      "manifest": "asr_manifest.jsonl",
+      "metrics": {
+        "evaluated_records": 0,
+        "status": "pending_audio_and_model_outputs",
+        "unsupported_reason": "ASR WER requires reference_text and model_output.text; bundled seed rows do not include audio.",
+        "wer": null
+      },
+      "missing_model_output_examples": [
+        "asr_seed_001",
+        "asr_seed_002",
+        "asr_seed_003",
+        "asr_seed_004"
+      ],
+      "model_outputs_missing": 4,
+      "model_outputs_present": 0,
+      "records": 4,
+      "reference_text_count": 4,
+      "task": "asr_transcription"
+    }
+  ],
+  "model_outputs_missing": 14,
+  "model_outputs_present": 0,
+  "scope": "seed manifests only; no production accuracy, WER, or scale claim",
+  "total_records": 14,
+  "type": "seed_evaluation_report"
+}

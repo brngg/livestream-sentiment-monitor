@@ -1,0 +1,114 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - prometheus:9090
+
+  - job_name: redpanda
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - redpanda:9644
+        labels:
+          service: redpanda
+          tier: event-bus
+
+  - job_name: event-gateway
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - event-gateway:8093
+        labels:
+          service: event-gateway
+          tier: event-boundary
+
+  - job_name: analysis-service
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - analysis-service:8094
+        labels:
+          service: analysis-service
+          tier: analysis-boundary
+
+  - job_name: dashboard
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - dashboard:8090
+        labels:
+          service: dashboard
+          tier: application
+
+  - job_name: sentiment-analyzer
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - sentiment-analyzer:8091
+        labels:
+          service: sentiment-analyzer
+          tier: model
+
+  - job_name: transcript-ingestor
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - transcript-ingestor:8092
+        labels:
+          service: transcript-ingestor
+          tier: ingestion
+
+  - job_name: service-health
+    metrics_path: /probe
+    params:
+      module:
+        - http_2xx
+    static_configs:
+      - targets:
+          - http://reverse-proxy/healthz
+        labels:
+          service: reverse-proxy
+          tier: edge
+      - targets:
+          - http://dashboard:8090/health
+        labels:
+          service: dashboard
+          tier: application
+      - targets:
+          - http://sentiment-analyzer:8091/health
+        labels:
+          service: sentiment-analyzer
+          tier: model
+      - targets:
+          - http://transcript-ingestor:8092/health
+        labels:
+          service: transcript-ingestor
+          tier: ingestion
+      - targets:
+          - http://event-gateway:8093/health
+        labels:
+          service: event-gateway
+          tier: event-boundary
+      - targets:
+          - http://analysis-service:8094/health
+        labels:
+          service: analysis-service
+          tier: analysis-boundary
+      - targets:
+          - http://grafana:3000/api/health
+        labels:
+          service: grafana
+          tier: observability
+    relabel_configs:
+      - source_labels:
+          - __address__
+        target_label: __param_target
+      - source_labels:
+          - __param_target
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

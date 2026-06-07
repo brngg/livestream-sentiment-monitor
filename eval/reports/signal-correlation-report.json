@@ -1,0 +1,931 @@
+{
+  "type": "signal_correlation_report",
+  "generated_at": "2026-05-23T00:00:00Z",
+  "scope": "Aligned chat/transcript sentiment pairs from stored session replay data; correlations are descriptive evidence, not ground-truth causality.",
+  "replay_limit": 500,
+  "cohort_config": {
+    "minimum_pairs_for_correlation": 3,
+    "divergence_delta_threshold": 0.45,
+    "minimum_calm_quality": 0.6,
+    "minimum_calm_chat_messages": 5,
+    "minimum_calm_transcript_chars": 40,
+    "lag_offsets_seconds": [
+      -60,
+      -30,
+      0,
+      30,
+      60
+    ],
+    "manual_sample_per_cohort": 10,
+    "manual_sample_cohorts": [
+      "detected_divergence",
+      "labeled_event",
+      "stable_baseline"
+    ]
+  },
+  "data_quality": {
+    "session_count": 3,
+    "chat_bucket_count": 4,
+    "transcript_bucket_count": 4,
+    "alignment_pair_count": 3,
+    "baseline_pair_count": 0,
+    "detected_divergence_count": 0,
+    "labeled_event_pair_count": 2,
+    "labeled_none_pair_count": 1,
+    "low_quality_alignment_count": 0,
+    "low_chat_volume_count": 0,
+    "short_transcript_count": 2,
+    "low_transcript_confidence_count": 0,
+    "empty_transcript_count": 0,
+    "missing_transcript_sentiment_count": 0,
+    "partial_overlap_count": 0,
+    "average_alignment_quality": 0.8533,
+    "baseline_exclusion_counts": {
+      "labeled_event": 2,
+      "short_transcript": 2
+    }
+  },
+  "aggregate": [
+    {
+      "name": "all_aligned",
+      "description": "Every persisted alignment pair with chat and transcript sentiment.",
+      "pair_count": 3,
+      "correlation_status": "computed",
+      "pearson": 0.9935,
+      "spearman": 1,
+      "mean_chat_sentiment": 0.2267,
+      "mean_transcript_sentiment": 0.1367,
+      "average_delta": 0.09,
+      "average_abs_delta": 0.1567,
+      "abs_delta_median": 0.1,
+      "abs_delta_p90": 0.308,
+      "abs_delta_p95": 0.334,
+      "average_quality": 0.8533,
+      "relationship_counts": {
+        "converged": 2,
+        "soft_split": 1
+      },
+      "label_counts": {
+        "audience_shift": 1,
+        "hype_spike": 1,
+        "none": 1
+      }
+    },
+    {
+      "name": "calm_baseline",
+      "description": "High-quality, non-divergent windows with no overlapping non-none label.",
+      "pair_count": 0,
+      "correlation_status": "insufficient_pairs",
+      "pearson": null,
+      "spearman": null,
+      "mean_chat_sentiment": null,
+      "mean_transcript_sentiment": null,
+      "average_delta": null,
+      "average_abs_delta": null,
+      "abs_delta_median": null,
+      "abs_delta_p90": null,
+      "abs_delta_p95": null,
+      "average_quality": null
+    },
+    {
+      "name": "detected_divergence",
+      "description": "Windows where the detector marks chat/transcript sentiment as diverged.",
+      "pair_count": 0,
+      "correlation_status": "insufficient_pairs",
+      "pearson": null,
+      "spearman": null,
+      "mean_chat_sentiment": null,
+      "mean_transcript_sentiment": null,
+      "average_delta": null,
+      "average_abs_delta": null,
+      "abs_delta_median": null,
+      "abs_delta_p90": null,
+      "abs_delta_p95": null,
+      "average_quality": null
+    },
+    {
+      "name": "labeled_events",
+      "description": "Windows overlapping a non-none manual or reviewed signal-window label.",
+      "pair_count": 2,
+      "correlation_status": "insufficient_pairs",
+      "pearson": null,
+      "spearman": null,
+      "mean_chat_sentiment": 0.32,
+      "mean_transcript_sentiment": 0.19,
+      "average_delta": 0.13,
+      "average_abs_delta": 0.23,
+      "abs_delta_median": 0.23,
+      "abs_delta_p90": 0.334,
+      "abs_delta_p95": 0.347,
+      "average_quality": 0.84,
+      "relationship_counts": {
+        "converged": 1,
+        "soft_split": 1
+      },
+      "label_counts": {
+        "audience_shift": 1,
+        "hype_spike": 1
+      }
+    },
+    {
+      "name": "labeled_none",
+      "description": "Windows overlapping an explicit none label.",
+      "pair_count": 1,
+      "correlation_status": "insufficient_pairs",
+      "pearson": null,
+      "spearman": null,
+      "mean_chat_sentiment": 0.04,
+      "mean_transcript_sentiment": 0.03,
+      "average_delta": 0.01,
+      "average_abs_delta": 0.01,
+      "abs_delta_median": 0.01,
+      "abs_delta_p90": 0.01,
+      "abs_delta_p95": 0.01,
+      "average_quality": 0.88,
+      "relationship_counts": {
+        "converged": 1
+      },
+      "label_counts": {
+        "none": 1
+      }
+    }
+  ],
+  "comparison": {
+    "baseline_cohort": "calm_baseline",
+    "event_cohort": "detected_divergence",
+    "status": "insufficient_correlation_pairs",
+    "pearson_drop_from_baseline": null,
+    "spearman_drop_from_baseline": null,
+    "average_abs_delta_change": null
+  },
+  "delta_calibration": {
+    "status": "insufficient_baseline_pairs",
+    "baseline_pair_count": 0,
+    "detected_divergence_pair_count": 0,
+    "current_threshold": 0.45,
+    "recommended_threshold": null,
+    "baseline_abs_delta_median": null,
+    "baseline_abs_delta_p90": null,
+    "baseline_abs_delta_p95": null,
+    "detected_above_baseline_p95": 0,
+    "detected_above_baseline_p95_rate": null,
+    "threshold_assessment": "insufficient_baseline_pairs"
+  },
+  "lag_analysis": [
+    {
+      "lag_seconds": -60,
+      "description": "chat bucket compared with transcript 60 seconds earlier",
+      "pair_count": 0,
+      "correlation_status": "insufficient_pairs",
+      "pearson": null,
+      "spearman": null,
+      "average_abs_delta": null
+    },
+    {
+      "lag_seconds": -30,
+      "description": "chat bucket compared with transcript 30 seconds earlier",
+      "pair_count": 1,
+      "correlation_status": "insufficient_pairs",
+      "pearson": null,
+      "spearman": null,
+      "average_abs_delta": 0.28
+    },
+    {
+      "lag_seconds": 0,
+      "description": "chat bucket compared with the same transcript window",
+      "pair_count": 4,
+      "correlation_status": "computed",
+      "pearson": 0.992,
+      "spearman": 1,
+      "average_abs_delta": 0.125
+    },
+    {
+      "lag_seconds": 30,
+      "description": "chat bucket compared with transcript 30 seconds later",
+      "pair_count": 1,
+      "correlation_status": "insufficient_pairs",
+      "pearson": null,
+      "spearman": null,
+      "average_abs_delta": 0.67
+    },
+    {
+      "lag_seconds": 60,
+      "description": "chat bucket compared with transcript 60 seconds later",
+      "pair_count": 0,
+      "correlation_status": "insufficient_pairs",
+      "pearson": null,
+      "spearman": null,
+      "average_abs_delta": null
+    }
+  ],
+  "best_lag": {
+    "lag_seconds": 0,
+    "description": "chat bucket compared with the same transcript window",
+    "pair_count": 4,
+    "correlation_status": "computed",
+    "pearson": 0.992,
+    "spearman": 1,
+    "average_abs_delta": 0.125
+  },
+  "negative_control": {
+    "status": "insufficient_shuffle_pairs",
+    "method": "Deterministically rotate transcript sentiment within each session before recomputing correlation.",
+    "pair_count": 3,
+    "observed_pearson": 0.9935,
+    "observed_spearman": 1,
+    "shuffled_pearson": null,
+    "shuffled_spearman": null,
+    "pearson_drop_vs_shuffled": null,
+    "spearman_drop_vs_shuffled": null,
+    "interpretation": "At least one session needs multiple aligned pairs for the within-session shuffled control to change the pairing."
+  },
+  "manual_validation_sample": [
+    {
+      "sample_cohort": "labeled_event",
+      "session_id": "golden_hype_peak",
+      "channel_id": "demo_channel",
+      "window_start": "2026-05-08T12:00:00Z",
+      "window_end": "2026-05-08T12:00:30Z",
+      "chat_sentiment": 0.72,
+      "transcript_sentiment": 0.36,
+      "delta": 0.36,
+      "relationship": "soft_split",
+      "alignment_quality": 0.82,
+      "chat_message_count": 42,
+      "transcript_text_length": 36,
+      "existing_label": "hype_spike",
+      "review_status": "needs_human_review",
+      "human_label": "",
+      "observable_cause": "",
+      "false_positive_reason": "",
+      "evidence": [
+        {
+          "source": "alignment",
+          "text": "relationship=soft_split; delta=0.3600; quality=0.8200",
+          "meta": {
+            "window_end": "2026-05-08T12:00:30Z",
+            "window_start": "2026-05-08T12:00:00Z"
+          }
+        },
+        {
+          "source": "chat",
+          "text": "NO WAY CLUTCH",
+          "meta": {
+            "label": "positive",
+            "message_id": "hype-m1",
+            "sentiment_score": 0.91
+          }
+        },
+        {
+          "source": "chat_terms",
+          "text": "clutch, phase, boss"
+        },
+        {
+          "source": "transcript",
+          "text": "That boss phase was perfectly timed.",
+          "meta": {
+            "sentiment_score": 0.36,
+            "status": "final",
+            "transcript_confidence": 0.92,
+            "word_count": 6
+          }
+        }
+      ]
+    },
+    {
+      "sample_cohort": "labeled_event",
+      "session_id": "golden_confusion_alignment",
+      "channel_id": "demo_channel",
+      "window_start": "2026-05-08T13:00:00Z",
+      "window_end": "2026-05-08T13:00:30Z",
+      "chat_sentiment": -0.08,
+      "transcript_sentiment": 0.02,
+      "delta": -0.1,
+      "relationship": "converged",
+      "alignment_quality": 0.86,
+      "chat_message_count": 31,
+      "transcript_text_length": 42,
+      "existing_label": "audience_shift",
+      "review_status": "needs_human_review",
+      "human_label": "",
+      "observable_cause": "",
+      "false_positive_reason": "",
+      "evidence": [
+        {
+          "source": "alignment",
+          "text": "relationship=converged; delta=-0.1000; quality=0.8600",
+          "meta": {
+            "window_end": "2026-05-08T13:00:30Z",
+            "window_start": "2026-05-08T13:00:00Z"
+          }
+        },
+        {
+          "source": "transcript",
+          "text": "The rules changed because the timer expired.",
+          "meta": {
+            "sentiment_score": 0.02,
+            "status": "final",
+            "transcript_confidence": 0.91,
+            "word_count": 7
+          }
+        }
+      ]
+    }
+  ],
+  "sessions": [
+    {
+      "session_id": "golden_normal_chat",
+      "channel_id": "demo_channel",
+      "pair_count": 1,
+      "data_quality": {
+        "session_count": 1,
+        "chat_bucket_count": 1,
+        "transcript_bucket_count": 1,
+        "alignment_pair_count": 1,
+        "baseline_pair_count": 0,
+        "detected_divergence_count": 0,
+        "labeled_event_pair_count": 0,
+        "labeled_none_pair_count": 1,
+        "low_quality_alignment_count": 0,
+        "low_chat_volume_count": 0,
+        "short_transcript_count": 1,
+        "low_transcript_confidence_count": 0,
+        "empty_transcript_count": 0,
+        "missing_transcript_sentiment_count": 0,
+        "partial_overlap_count": 0,
+        "average_alignment_quality": 0.88,
+        "baseline_exclusion_counts": {
+          "short_transcript": 1
+        }
+      },
+      "cohorts": [
+        {
+          "name": "all_aligned",
+          "description": "Every persisted alignment pair with chat and transcript sentiment.",
+          "pair_count": 1,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": 0.04,
+          "mean_transcript_sentiment": 0.03,
+          "average_delta": 0.01,
+          "average_abs_delta": 0.01,
+          "abs_delta_median": 0.01,
+          "abs_delta_p90": 0.01,
+          "abs_delta_p95": 0.01,
+          "average_quality": 0.88,
+          "relationship_counts": {
+            "converged": 1
+          },
+          "label_counts": {
+            "none": 1
+          }
+        },
+        {
+          "name": "calm_baseline",
+          "description": "High-quality, non-divergent windows with no overlapping non-none label.",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": null,
+          "mean_transcript_sentiment": null,
+          "average_delta": null,
+          "average_abs_delta": null,
+          "abs_delta_median": null,
+          "abs_delta_p90": null,
+          "abs_delta_p95": null,
+          "average_quality": null
+        },
+        {
+          "name": "detected_divergence",
+          "description": "Windows where the detector marks chat/transcript sentiment as diverged.",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": null,
+          "mean_transcript_sentiment": null,
+          "average_delta": null,
+          "average_abs_delta": null,
+          "abs_delta_median": null,
+          "abs_delta_p90": null,
+          "abs_delta_p95": null,
+          "average_quality": null
+        },
+        {
+          "name": "labeled_events",
+          "description": "Windows overlapping a non-none manual or reviewed signal-window label.",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": null,
+          "mean_transcript_sentiment": null,
+          "average_delta": null,
+          "average_abs_delta": null,
+          "abs_delta_median": null,
+          "abs_delta_p90": null,
+          "abs_delta_p95": null,
+          "average_quality": null
+        },
+        {
+          "name": "labeled_none",
+          "description": "Windows overlapping an explicit none label.",
+          "pair_count": 1,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": 0.04,
+          "mean_transcript_sentiment": 0.03,
+          "average_delta": 0.01,
+          "average_abs_delta": 0.01,
+          "abs_delta_median": 0.01,
+          "abs_delta_p90": 0.01,
+          "abs_delta_p95": 0.01,
+          "average_quality": 0.88,
+          "relationship_counts": {
+            "converged": 1
+          },
+          "label_counts": {
+            "none": 1
+          }
+        }
+      ],
+      "delta_calibration": {
+        "status": "insufficient_baseline_pairs",
+        "baseline_pair_count": 0,
+        "detected_divergence_pair_count": 0,
+        "current_threshold": 0.45,
+        "recommended_threshold": null,
+        "baseline_abs_delta_median": null,
+        "baseline_abs_delta_p90": null,
+        "baseline_abs_delta_p95": null,
+        "detected_above_baseline_p95": 0,
+        "detected_above_baseline_p95_rate": null,
+        "threshold_assessment": "insufficient_baseline_pairs"
+      },
+      "lag_analysis": [
+        {
+          "lag_seconds": -60,
+          "description": "chat bucket compared with transcript 60 seconds earlier",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": null
+        },
+        {
+          "lag_seconds": -30,
+          "description": "chat bucket compared with transcript 30 seconds earlier",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": null
+        },
+        {
+          "lag_seconds": 0,
+          "description": "chat bucket compared with the same transcript window",
+          "pair_count": 1,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": 0.01
+        },
+        {
+          "lag_seconds": 30,
+          "description": "chat bucket compared with transcript 30 seconds later",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": null
+        },
+        {
+          "lag_seconds": 60,
+          "description": "chat bucket compared with transcript 60 seconds later",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": null
+        }
+      ],
+      "negative_control": {
+        "status": "insufficient_pairs",
+        "method": "Deterministically rotate transcript sentiment within each session before recomputing correlation.",
+        "pair_count": 1,
+        "observed_pearson": null,
+        "observed_spearman": null,
+        "shuffled_pearson": null,
+        "shuffled_spearman": null,
+        "pearson_drop_vs_shuffled": null,
+        "spearman_drop_vs_shuffled": null,
+        "interpretation": "Not enough aligned pairs to compare observed correlation against a shuffled control."
+      },
+      "limitations": [
+        "Fewer aligned pairs than the configured minimum for correlation."
+      ]
+    },
+    {
+      "session_id": "golden_confusion_alignment",
+      "channel_id": "demo_channel",
+      "pair_count": 1,
+      "data_quality": {
+        "session_count": 1,
+        "chat_bucket_count": 1,
+        "transcript_bucket_count": 1,
+        "alignment_pair_count": 1,
+        "baseline_pair_count": 0,
+        "detected_divergence_count": 0,
+        "labeled_event_pair_count": 1,
+        "labeled_none_pair_count": 0,
+        "low_quality_alignment_count": 0,
+        "low_chat_volume_count": 0,
+        "short_transcript_count": 0,
+        "low_transcript_confidence_count": 0,
+        "empty_transcript_count": 0,
+        "missing_transcript_sentiment_count": 0,
+        "partial_overlap_count": 0,
+        "average_alignment_quality": 0.86,
+        "baseline_exclusion_counts": {
+          "labeled_event": 1
+        }
+      },
+      "cohorts": [
+        {
+          "name": "all_aligned",
+          "description": "Every persisted alignment pair with chat and transcript sentiment.",
+          "pair_count": 1,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": -0.08,
+          "mean_transcript_sentiment": 0.02,
+          "average_delta": -0.1,
+          "average_abs_delta": 0.1,
+          "abs_delta_median": 0.1,
+          "abs_delta_p90": 0.1,
+          "abs_delta_p95": 0.1,
+          "average_quality": 0.86,
+          "relationship_counts": {
+            "converged": 1
+          },
+          "label_counts": {
+            "audience_shift": 1
+          }
+        },
+        {
+          "name": "calm_baseline",
+          "description": "High-quality, non-divergent windows with no overlapping non-none label.",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": null,
+          "mean_transcript_sentiment": null,
+          "average_delta": null,
+          "average_abs_delta": null,
+          "abs_delta_median": null,
+          "abs_delta_p90": null,
+          "abs_delta_p95": null,
+          "average_quality": null
+        },
+        {
+          "name": "detected_divergence",
+          "description": "Windows where the detector marks chat/transcript sentiment as diverged.",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": null,
+          "mean_transcript_sentiment": null,
+          "average_delta": null,
+          "average_abs_delta": null,
+          "abs_delta_median": null,
+          "abs_delta_p90": null,
+          "abs_delta_p95": null,
+          "average_quality": null
+        },
+        {
+          "name": "labeled_events",
+          "description": "Windows overlapping a non-none manual or reviewed signal-window label.",
+          "pair_count": 1,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": -0.08,
+          "mean_transcript_sentiment": 0.02,
+          "average_delta": -0.1,
+          "average_abs_delta": 0.1,
+          "abs_delta_median": 0.1,
+          "abs_delta_p90": 0.1,
+          "abs_delta_p95": 0.1,
+          "average_quality": 0.86,
+          "relationship_counts": {
+            "converged": 1
+          },
+          "label_counts": {
+            "audience_shift": 1
+          }
+        },
+        {
+          "name": "labeled_none",
+          "description": "Windows overlapping an explicit none label.",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": null,
+          "mean_transcript_sentiment": null,
+          "average_delta": null,
+          "average_abs_delta": null,
+          "abs_delta_median": null,
+          "abs_delta_p90": null,
+          "abs_delta_p95": null,
+          "average_quality": null
+        }
+      ],
+      "delta_calibration": {
+        "status": "insufficient_baseline_pairs",
+        "baseline_pair_count": 0,
+        "detected_divergence_pair_count": 0,
+        "current_threshold": 0.45,
+        "recommended_threshold": null,
+        "baseline_abs_delta_median": null,
+        "baseline_abs_delta_p90": null,
+        "baseline_abs_delta_p95": null,
+        "detected_above_baseline_p95": 0,
+        "detected_above_baseline_p95_rate": null,
+        "threshold_assessment": "insufficient_baseline_pairs"
+      },
+      "lag_analysis": [
+        {
+          "lag_seconds": -60,
+          "description": "chat bucket compared with transcript 60 seconds earlier",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": null
+        },
+        {
+          "lag_seconds": -30,
+          "description": "chat bucket compared with transcript 30 seconds earlier",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": null
+        },
+        {
+          "lag_seconds": 0,
+          "description": "chat bucket compared with the same transcript window",
+          "pair_count": 1,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": 0.1
+        },
+        {
+          "lag_seconds": 30,
+          "description": "chat bucket compared with transcript 30 seconds later",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": null
+        },
+        {
+          "lag_seconds": 60,
+          "description": "chat bucket compared with transcript 60 seconds later",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": null
+        }
+      ],
+      "negative_control": {
+        "status": "insufficient_pairs",
+        "method": "Deterministically rotate transcript sentiment within each session before recomputing correlation.",
+        "pair_count": 1,
+        "observed_pearson": null,
+        "observed_spearman": null,
+        "shuffled_pearson": null,
+        "shuffled_spearman": null,
+        "pearson_drop_vs_shuffled": null,
+        "spearman_drop_vs_shuffled": null,
+        "interpretation": "Not enough aligned pairs to compare observed correlation against a shuffled control."
+      },
+      "limitations": [
+        "Fewer aligned pairs than the configured minimum for correlation."
+      ]
+    },
+    {
+      "session_id": "golden_hype_peak",
+      "channel_id": "demo_channel",
+      "pair_count": 1,
+      "data_quality": {
+        "session_count": 1,
+        "chat_bucket_count": 2,
+        "transcript_bucket_count": 2,
+        "alignment_pair_count": 1,
+        "baseline_pair_count": 0,
+        "detected_divergence_count": 0,
+        "labeled_event_pair_count": 1,
+        "labeled_none_pair_count": 0,
+        "low_quality_alignment_count": 0,
+        "low_chat_volume_count": 0,
+        "short_transcript_count": 1,
+        "low_transcript_confidence_count": 0,
+        "empty_transcript_count": 0,
+        "missing_transcript_sentiment_count": 0,
+        "partial_overlap_count": 0,
+        "average_alignment_quality": 0.82,
+        "baseline_exclusion_counts": {
+          "labeled_event": 1,
+          "short_transcript": 1
+        }
+      },
+      "cohorts": [
+        {
+          "name": "all_aligned",
+          "description": "Every persisted alignment pair with chat and transcript sentiment.",
+          "pair_count": 1,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": 0.72,
+          "mean_transcript_sentiment": 0.36,
+          "average_delta": 0.36,
+          "average_abs_delta": 0.36,
+          "abs_delta_median": 0.36,
+          "abs_delta_p90": 0.36,
+          "abs_delta_p95": 0.36,
+          "average_quality": 0.82,
+          "relationship_counts": {
+            "soft_split": 1
+          },
+          "label_counts": {
+            "hype_spike": 1
+          }
+        },
+        {
+          "name": "calm_baseline",
+          "description": "High-quality, non-divergent windows with no overlapping non-none label.",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": null,
+          "mean_transcript_sentiment": null,
+          "average_delta": null,
+          "average_abs_delta": null,
+          "abs_delta_median": null,
+          "abs_delta_p90": null,
+          "abs_delta_p95": null,
+          "average_quality": null
+        },
+        {
+          "name": "detected_divergence",
+          "description": "Windows where the detector marks chat/transcript sentiment as diverged.",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": null,
+          "mean_transcript_sentiment": null,
+          "average_delta": null,
+          "average_abs_delta": null,
+          "abs_delta_median": null,
+          "abs_delta_p90": null,
+          "abs_delta_p95": null,
+          "average_quality": null
+        },
+        {
+          "name": "labeled_events",
+          "description": "Windows overlapping a non-none manual or reviewed signal-window label.",
+          "pair_count": 1,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": 0.72,
+          "mean_transcript_sentiment": 0.36,
+          "average_delta": 0.36,
+          "average_abs_delta": 0.36,
+          "abs_delta_median": 0.36,
+          "abs_delta_p90": 0.36,
+          "abs_delta_p95": 0.36,
+          "average_quality": 0.82,
+          "relationship_counts": {
+            "soft_split": 1
+          },
+          "label_counts": {
+            "hype_spike": 1
+          }
+        },
+        {
+          "name": "labeled_none",
+          "description": "Windows overlapping an explicit none label.",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "mean_chat_sentiment": null,
+          "mean_transcript_sentiment": null,
+          "average_delta": null,
+          "average_abs_delta": null,
+          "abs_delta_median": null,
+          "abs_delta_p90": null,
+          "abs_delta_p95": null,
+          "average_quality": null
+        }
+      ],
+      "delta_calibration": {
+        "status": "insufficient_baseline_pairs",
+        "baseline_pair_count": 0,
+        "detected_divergence_pair_count": 0,
+        "current_threshold": 0.45,
+        "recommended_threshold": null,
+        "baseline_abs_delta_median": null,
+        "baseline_abs_delta_p90": null,
+        "baseline_abs_delta_p95": null,
+        "detected_above_baseline_p95": 0,
+        "detected_above_baseline_p95_rate": null,
+        "threshold_assessment": "insufficient_baseline_pairs"
+      },
+      "lag_analysis": [
+        {
+          "lag_seconds": -60,
+          "description": "chat bucket compared with transcript 60 seconds earlier",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": null
+        },
+        {
+          "lag_seconds": -30,
+          "description": "chat bucket compared with transcript 30 seconds earlier",
+          "pair_count": 1,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": 0.28
+        },
+        {
+          "lag_seconds": 0,
+          "description": "chat bucket compared with the same transcript window",
+          "pair_count": 2,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": 0.195
+        },
+        {
+          "lag_seconds": 30,
+          "description": "chat bucket compared with transcript 30 seconds later",
+          "pair_count": 1,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": 0.67
+        },
+        {
+          "lag_seconds": 60,
+          "description": "chat bucket compared with transcript 60 seconds later",
+          "pair_count": 0,
+          "correlation_status": "insufficient_pairs",
+          "pearson": null,
+          "spearman": null,
+          "average_abs_delta": null
+        }
+      ],
+      "negative_control": {
+        "status": "insufficient_pairs",
+        "method": "Deterministically rotate transcript sentiment within each session before recomputing correlation.",
+        "pair_count": 1,
+        "observed_pearson": null,
+        "observed_spearman": null,
+        "shuffled_pearson": null,
+        "shuffled_spearman": null,
+        "pearson_drop_vs_shuffled": null,
+        "spearman_drop_vs_shuffled": null,
+        "interpretation": "Not enough aligned pairs to compare observed correlation against a shuffled control."
+      },
+      "limitations": [
+        "Fewer aligned pairs than the configured minimum for correlation."
+      ]
+    }
+  ],
+  "limitations": [
+    "labeled_events has 2 pairs, below the configured minimum of 3.",
+    "labeled_none has 1 pairs, below the configured minimum of 3.",
+    "No calm baseline pairs met the quality, chat-volume, transcript-length, and non-divergence filters.",
+    "No detected divergence pairs were present in the selected sessions.",
+    "Baseline delta calibration is pending until enough calm baseline pairs are available.",
+    "Negative-control correlation is pending until enough non-constant aligned pairs with multiple pairs per session are available."
+  ]
+}
