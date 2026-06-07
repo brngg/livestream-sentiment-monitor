@@ -34,9 +34,10 @@ It focuses on inspectable output instead of black-box conclusions. Each signal
 window keeps timing, sentiment, chat samples, transcript context, and proof
 metrics so a reviewer can decide whether the signal is meaningful.
 
-The safest public demo path is replay-first: visitors can inspect stored stream
-sessions and evaluation views without requiring Twitch credentials, NVIDIA ASR
-credits, or public live ingestion.
+The public demo path is a controlled live dashboard: visitors can start a
+short Twitch livestream session, watch chat sentiment and speech transcript
+signals update in real time, and inspect the aligned evidence while the
+session is active.
 
 ## Core Features
 
@@ -199,33 +200,18 @@ curl -fsS http://localhost:8092/health
 curl -fsS http://localhost:8090/sessions/history
 ```
 
-## Public Demo Settings
+## Public Demo
 
-For a replay-first public demo:
+The public demo is a live frontend experience for trying the monitor against a
+Twitch livestream. A visitor enters a Twitch channel or livestream URL, starts
+a short session, and sees chat sentiment, transcript snippets, timeline
+charts, and chat/transcript alignment update while the stream is running.
 
-```env
-REPLAY_FIXTURE_PATH=/app/services/chat-ingestor-go/testdata/golden-replay/sessions.json
-DATABASE_WRITE_ENABLED=false
-NLP_ANALYZER_URL=
-TRANSCRIPT_INGESTOR_URL=
-EVENT_BUS_ENABLED=false
-ANALYSIS_SERVICE_REQUIRED=false
-PUBLIC_START_ENABLED=false
-ADMIN_TOKEN=replace-with-private-admin-token
-```
-
-If public live starts are enabled, cap them tightly:
-
-```env
-PUBLIC_START_ENABLED=true
-MAX_ACTIVE_SESSIONS=1
-SESSION_MAX_DURATION=3m
-DAILY_LIVE_START_LIMIT=10
-LIVE_SOURCE_ALLOWLIST=your-demo-channel
-```
-
-Live ingestion should be treated as a controlled demo path, not the default
-public experience.
+The hosted demo is intentionally lightweight. It does not need database-backed
+storage, Eval Lab, replay history, Redpanda/Kafka, or production observability.
+Session state can stay in memory for the current run, with live starts capped
+by active-session, duration, and daily limits. Twitch and NVIDIA credentials
+remain server-side service secrets.
 
 ## Routes And APIs
 
@@ -327,25 +313,6 @@ docker-compose.prod.yml
   Single-node production-demo Compose graph.
 ```
 
-## Claim Boundaries
-
-Safe claims:
-
-- The project implements an end-to-end livestream sentiment workflow.
-- The UI shows live and replayable chat/transcript evidence.
-- Replay and proof endpoints make stream signals inspectable after the fact.
-- Evaluation reports separate pending metrics from measured metrics.
-- Signal correlation reports provide descriptive evidence and limitations.
-
-Do not claim:
-
-- Final sentiment accuracy.
-- Final ASR WER.
-- Twitch-wide benchmark quality.
-- Human-ground-truth labels from agent-reviewed rows.
-- Causality between speech and audience reaction.
-- Production-scale reliability.
-
 ## Tests
 
 ```bash
@@ -374,12 +341,3 @@ python3 contracts/test_live_payload_contracts.py
 cmake -S services/transcript-ingestor-cpp -B /tmp/transcript-ingestor-cpp-build
 cmake --build /tmp/transcript-ingestor-cpp-build -j4
 ```
-
-## Current Maturity
-
-The project is ready for a controlled replay-first public demo and a private
-live demo if credentials and external services are configured.
-
-Before treating it as production, it needs broader human-verified evaluation
-coverage, stronger alerting/SLOs, CI-backed regression proof, managed identity,
-and a fully controlled public live-start policy.
