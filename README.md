@@ -39,6 +39,20 @@ short Twitch livestream session, watch chat sentiment and speech transcript
 signals update in real time, and inspect the aligned evidence while the
 session is active.
 
+## Live Demo
+
+![Full live dashboard demo](docs/demo/live-full-package-stableronaldo.gif)
+
+This capture shows a real Twitch livestream flowing through the full live
+pipeline: stream preview, public chat ingestion, NVIDIA ASR transcript capture,
+Python sentiment scoring, chat/transcript alignment, sentiment timeline, and
+signal evidence.
+
+[Watch the higher-quality MP4](docs/demo/live-full-package-stableronaldo.mp4)
+
+For capture notes, reproducibility details, and responsible-use caveats, see
+[docs/demo.md](docs/demo.md).
+
 ## Core Features
 
 ### Live Stream Input
@@ -279,6 +293,29 @@ go run ./cmd/signal-correlation-report \
   --format json \
   --markdown-name ""
 ```
+
+## Limitations And Bias
+
+Sentiment and signal windows are evidence aids, not ground truth. The
+limitations framing follows the same spirit as projects such as
+[FerroEduardo/TwitchSentimentAnalysis](https://github.com/FerroEduardo/TwitchSentimentAnalysis):
+model output can reflect training-data bias, and accuracy varies with language,
+domain, and context. This project adds a few live-stream-specific caveats:
+
+- Twitch chat often uses slang, sarcasm, spam, emotes, raids, memes, and
+  community-specific shorthand that may not map cleanly to positive, neutral,
+  or negative sentiment.
+- Political, news, or identity-related streams can amplify dataset and
+  annotation bias. Treat aggregate sentiment as a review cue, not as a claim
+  about a group, person, or event.
+- ASR can mishear names, accents, overlapping speech, music, game audio, or
+  rapid speech. Alignment quality depends on transcript timing and chat volume.
+- A detected signal means the system found enough timing and evidence to
+  inspect. It does not prove causality between what was said and how chat
+  reacted.
+- Public demos that show third-party livestream footage or chat should be kept
+  short and replaced with owned or permissioned footage for broad distribution
+  when possible.
 
 ## Project Structure
 
