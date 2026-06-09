@@ -60,7 +60,7 @@ services:
     region: oregon
     branch: main
     autoDeploy: true
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./services/transcript-ingestor-cpp/Dockerfile
     dockerContext: ./services/transcript-ingestor-cpp
     envVars:
       - key: NLP_ANALYZER_HOSTPORT
@@ -98,7 +98,7 @@ services:
     region: oregon
     branch: main
     autoDeploy: true
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./services/sentiment-analyzer-python/Dockerfile
     dockerContext: ./services/sentiment-analyzer-python
     envVars:
       - key: SENTIMENT_MODEL
