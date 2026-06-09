@@ -104,42 +104,61 @@ For capture notes, reproducibility details, and responsible-use caveats, see
 
 ## Architecture
 
-```text
-Twitch channel or YouTube livestream URL
-  -> Go control plane
-       -> Twitch live verification
-       -> Twitch chat ingestion
-       -> chat bucket scoring
-       -> transcript proxy/upsert
-       -> React web UI
-       -> replay/evaluation/proof APIs
-       -> optional Postgres persistence
-       -> event publishing
+The core product path is stream source -> ingestion -> analysis -> dashboard.
+Kafka/Redpanda and Postgres/Neon are optional durability and evaluation layers,
+not required for the offline replay demo.
 
-Twitch audio
-  -> C++ transcript ingestor
-       -> Streamlink + ffmpeg
-       -> hosted NVIDIA ASR NIM
-       -> transcript buckets
-       -> transcript sentiment scoring
+```mermaid
+flowchart LR
+    subgraph Sources["Live Stream Sources"]
+        direction TB
+        Twitch["Twitch channel<br/>chat + audio"]
+        YouTube["YouTube livestream URL<br/>transcript only"]
+    end
 
-chat buckets + transcript buckets
-  -> Redpanda / Kafka-compatible event bus
-  -> Go analysis service
-       -> event-driven joins
-       -> alignment buckets
-       -> SignalWindow records
-       -> analysis_result events
-       -> SSE/API updates
+    subgraph Ingestion["Ingestion Services"]
+        direction TB
+        ChatIngestor["Go dashboard service<br/>Helix verification + Twitch IRC"]
+        TranscriptIngestor["C++ transcript service<br/>Streamlink + ffmpeg + NVIDIA ASR"]
+    end
 
-Postgres / Neon
-  -> sessions
-  -> chat buckets
-  -> transcript buckets
-  -> alignments
-  -> labels
-  -> sampled evidence
-  -> replay/proof/evaluation
+    subgraph Intelligence["Analysis Pipeline"]
+        direction TB
+        Sentiment["Python sentiment analyzer<br/>chat + transcript buckets"]
+        Alignment["Go alignment service<br/>timestamp overlap"]
+        Signals["Signal windows<br/>hype, frustration, shifts, divergence"]
+    end
+
+    subgraph Product["User-Facing Product"]
+        direction TB
+        Dashboard["React live dashboard<br/>video, chat, transcript, graph"]
+        EvalLab["Replay / Eval Lab<br/>proof + labels"]
+    end
+
+    subgraph OptionalInfra["Optional Durable Infrastructure"]
+        direction TB
+        Kafka[("Redpanda / Kafka<br/>event topics")]
+        Postgres[("Postgres / Neon<br/>sessions, evidence, labels")]
+    end
+
+    Twitch -- "public chat" --> ChatIngestor
+    Twitch -- "audio stream" --> TranscriptIngestor
+    YouTube -- "audio stream" --> TranscriptIngestor
+
+    ChatIngestor -- "chat buckets" --> Sentiment
+    TranscriptIngestor -- "transcript buckets" --> Sentiment
+    Sentiment -- "scored windows" --> Alignment
+    Alignment --> Signals
+
+    ChatIngestor -- "live state" --> Dashboard
+    TranscriptIngestor -- "live captions" --> Dashboard
+    Signals -- "aligned evidence" --> Dashboard
+    Postgres -- "stored sessions" --> EvalLab
+
+    ChatIngestor -. "publish events" .-> Kafka
+    TranscriptIngestor -. "publish events" .-> Kafka
+    Signals -. "persist evidence" .-> Postgres
+    Dashboard -. "labels + proof" .-> Postgres
 ```
 
 ## Quick Start: Offline Replay Demo
