@@ -2216,6 +2216,8 @@ void handle_client(int fd) {
     }
     if (request->method == "OPTIONS") {
         send_response(fd, 204, "No Content", "");
+    } else if (request->method == "GET" && request->path == "/ready") {
+        send_response(fd, 200, "OK", "{\"status\":\"ok\",\"service\":\"transcript-ingestor\"}");
     } else if (request->method == "GET" && request->path == "/health") {
         std::string body = health_json();
         send_response(fd, body.find("\"status\":\"ok\"") != std::string::npos ? 200 : 503, body.find("\"status\":\"ok\"") != std::string::npos ? "OK" : "Service Unavailable", body);

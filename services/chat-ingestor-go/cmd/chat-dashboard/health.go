@@ -9,6 +9,13 @@ import (
 	"stream-reaction-intelligence/services/chat-ingestor-go/internal/storage"
 )
 
+func (s *server) handleReady(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status":  "ok",
+		"service": "chat-dashboard",
+	})
+}
+
 func (s *server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	storageStatus := "disabled"
 	if s.cfg.DatabaseWriteEnabled && strings.TrimSpace(s.cfg.DatabaseURL) != "" {

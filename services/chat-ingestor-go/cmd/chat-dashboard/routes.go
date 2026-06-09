@@ -21,6 +21,7 @@ func (s *server) registerRoutes(mux *http.ServeMux, frontendDir string) {
 	mux.HandleFunc("GET /transcript/events", s.handleTranscriptEvents)
 	mux.HandleFunc("POST /transcript/sessions", s.requireAdmin(s.handleTranscriptStartProxy))
 	mux.HandleFunc("POST /transcript/stop", s.requireAdmin(s.handleTranscriptStopProxy))
+	mux.HandleFunc("GET /ready", s.handleReady)
 	mux.HandleFunc("GET /health", s.handleHealth)
 	mux.HandleFunc("GET /metrics", s.handleMetrics)
 	mux.Handle("/", staticHandler(frontendDir))

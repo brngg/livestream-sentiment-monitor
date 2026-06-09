@@ -1221,8 +1221,9 @@ function ModernAnalyticsPanel({
   const sentimentPoints = useMemo(() => buildSentimentPoints(alignments, buckets, transcriptBuckets), [alignments, buckets, transcriptBuckets]);
   const reactionPoints = useMemo(() => buildReactionWindowPoints(reactionWindows), [reactionWindows]);
   const latestSentimentPoint = sentimentPoints[sentimentPoints.length - 1];
+  const latestScoredTranscriptBucket = transcriptBuckets.find((bucket) => typeof bucket.sentiment_score === "number");
   const latestChat = latestAlignment?.chat_sentiment ?? latestBucket?.chat_sentiment ?? latestSentimentPoint?.chat;
-  const latestTranscript = latestAlignment?.transcript_sentiment ?? latestSentimentPoint?.transcript;
+  const latestTranscript = latestAlignment?.transcript_sentiment ?? latestScoredTranscriptBucket?.sentiment_score ?? latestSentimentPoint?.transcript;
   const latestAggregate = averageSignals(latestChat, latestTranscript) ?? latestSentimentPoint?.aggregate ?? latestChat ?? latestTranscript;
   const latestGap = typeof latestAlignment?.delta === "number"
     ? Math.abs(latestAlignment.delta)
@@ -1231,12 +1232,12 @@ function ModernAnalyticsPanel({
       : 0;
   const keywords = keywordRows(latestBucket, messages);
   const topEmotes = latestBucket?.top_emotes?.filter(Boolean).slice(0, 3) || [];
-  const agreementLabel = latestAlignment ? relationshipStatus(relationshipLabel(latestAlignment.relationship).key) : latestTranscript ? "matching" : "waiting";
+  const agreementLabel = latestAlignment ? relationshipStatus(relationshipLabel(latestAlignment.relationship).key) : typeof latestTranscript === "number" ? "matching" : "waiting";
   const processingDelay = processingDelayLabel(latestBucket, transcriptBuckets[0]);
   const hasProvisionalTranscriptWindow = reactionWindows.some((window) => isTranscriptReactionWindow(window) && window.provisional);
   const sentimentChartMode = typeof latestTranscript === "number"
     ? "Time x-axis, fixed sentiment y-axis, hover for window details"
-    : latestBucket ? "Chat-only timeline until raw transcript buckets align" : replay ? "No stored alignment buckets returned for this replay" : liveActive ? "Waiting for live chat and transcript data" : "Start a live session to collect chat and transcript windows";
+    : latestBucket ? "Showing chat and any scored transcript buckets until windows align" : replay ? "No stored alignment buckets returned for this replay" : liveActive ? "Waiting for live chat and transcript data" : "Start a live session to collect chat and transcript windows";
   const reactionChartMode = reactionChartDescription(hasProvisionalTranscriptWindow, replay, liveActive);
   const aggregateValues = sentimentPoints.map((point) => point.aggregate ?? point.chat ?? point.transcript).filter((value): value is number => typeof value === "number");
   const chartRange = valueRange(aggregateValues);
@@ -2089,7 +2090,9 @@ function buildHealthMetrics(
   const transcriptBucketStatus = transcriptStatusLabel(latestTranscriptBucket);
   const transcriptHealthValue = transcriptWarning && !replay
     ? "Delayed"
-    : displayTranscriptFinalityLabel(transcriptBucketStatus || transcriptStatus || transcriptHealth?.status);
+    : latestTranscriptBucket
+      ? transcriptFinalityForBucket(latestTranscriptBucket)
+      : displayTranscriptFinalityLabel(transcriptBucketStatus || transcriptStatus || transcriptHealth?.status);
   const transcriptHealthMeta = transcriptWarning && !replay
     ? transcriptWarning
     : latestTranscriptBucket
@@ -2107,7 +2110,7 @@ function buildHealthMetrics(
       label: "Transcript",
       value: transcriptHealthValue,
       meta: transcriptHealthMeta,
-      tone: transcriptWarning && !replay ? "warn" : healthTone(transcriptBucketStatus || transcriptStatus)
+      tone: transcriptWarning && !replay ? "warn" : latestTranscriptBucket ? transcriptFinalityTone(transcriptHealthValue) : healthTone(transcriptBucketStatus || transcriptStatus)
     },
     {
       label: "Agreement",
@@ -2266,6 +2269,9 @@ function displayTranscriptFinalityLabel(value?: string) {
 }
 
 function transcriptFinalityForBucket(bucket?: TranscriptBucket) {
+  if (typeof bucket?.sentiment_score === "number") {
+    return bucket.transcript_status === "final" || bucket.quality?.final ? "Final" : "Scored";
+  }
   if (bucket?.quality?.repaired || (typeof bucket?.repair_added_words === "number" && bucket.repair_added_words > 0)) {
     return "Repaired";
   }
@@ -2281,7 +2287,7 @@ function transcriptFinalityForPrimaryInsight(window: ReactionWindow | undefined,
 
 function transcriptFinalityTone(value: string): HealthMetricTone {
   if (value === "Delayed") return "warn";
-  if (value === "Live" || value === "Repaired") return "ok";
+  if (value === "Live" || value === "Repaired" || value === "Scored" || value === "Final") return "ok";
   return "muted";
 }
 
@@ -4086,36 +4092,74 @@ function buildSentimentPoints(alignments: AlignmentBucket[], buckets: ChatBucket
       }));
   }
 
-  if (transcriptBuckets.length > 0 && buckets.length === 0) {
-    return transcriptBuckets
-      .filter((bucket) => typeof bucket.sentiment_score === "number")
-      .slice(0, 24)
-      .reverse()
-      .map((bucket, index) => {
-        const score = bucket.sentiment_score;
-        return {
-          key: `${bucket.session_id}-${bucket.bucket_start}-${index}`,
-          time: formatTime(bucket.bucket_start),
-          source: "transcript",
-          transcript: score,
-          aggregate: score,
-          messages: bucket.word_count ?? captionWords(bucket.text || "").length,
-          confidence: bucket.sentiment_confidence,
-          text: bucket.text
-        };
-      });
-  }
+  return buildUnalignedSentimentPoints(buckets, transcriptBuckets);
+}
 
-  return buckets
+function buildUnalignedSentimentPoints(buckets: ChatBucket[], transcriptBuckets: TranscriptBucket[] = []): SentimentPoint[] {
+  type IndexedPoint = SentimentPoint & { sortTimeMS: number };
+  const byWindow = new Map<string, IndexedPoint>();
+
+  buckets.slice(0, 24).forEach((bucket, index) => {
+    const key = sentimentWindowKey("chat", bucket.session_id, bucket.channel_id, bucket.bucket_start, bucket.bucket_end, index);
+    const point = ensureSentimentWindowPoint(byWindow, key, bucket.session_id, bucket.bucket_start, bucket.bucket_end, index);
+    point.chat = bucket.chat_sentiment;
+    point.aggregate = averageSignals(point.chat, point.transcript);
+    point.messages = Math.max(point.messages || 0, bucket.message_count || 0);
+  });
+
+  transcriptBuckets
+    .filter((bucket) => typeof bucket.sentiment_score === "number")
     .slice(0, 24)
-    .reverse()
-    .map((bucket, index) => ({
-      key: `${bucket.session_id}-${bucket.bucket_start}-${index}`,
-      time: formatTime(bucket.bucket_start),
-      chat: bucket.chat_sentiment,
-      aggregate: bucket.chat_sentiment,
-      messages: bucket.message_count
-    }));
+    .forEach((bucket, index) => {
+      const key = sentimentWindowKey("transcript", bucket.session_id, bucket.channel_id, bucket.bucket_start, bucket.bucket_end, index);
+      const point = ensureSentimentWindowPoint(byWindow, key, bucket.session_id, bucket.bucket_start, bucket.bucket_end, index);
+      point.source = point.chat === undefined ? "transcript" : point.source;
+      point.transcript = bucket.sentiment_score;
+      point.aggregate = averageSignals(point.chat, point.transcript);
+      point.messages = Math.max(point.messages || 0, bucket.word_count ?? captionWords(bucket.text || "").length);
+      point.confidence = bucket.sentiment_confidence;
+      point.text = bucket.text;
+    });
+
+  return Array.from(byWindow.values())
+    .sort((left, right) => left.sortTimeMS - right.sortTimeMS)
+    .slice(-24)
+    .map(({ sortTimeMS: _sortTimeMS, ...point }) => point);
+}
+
+function ensureSentimentWindowPoint(
+  points: Map<string, SentimentPoint & { sortTimeMS: number }>,
+  key: string,
+  sessionID: string | undefined,
+  windowStart: string | undefined,
+  windowEnd: string | undefined,
+  index: number
+) {
+  const existing = points.get(key);
+  if (existing) return existing;
+  const sortTimeMS = timestampValue(windowStart || windowEnd);
+  const point: SentimentPoint & { sortTimeMS: number } = {
+    key: `${sessionID || "session"}-${windowStart || windowEnd || "window"}-${index}`,
+    time: formatTime(windowStart || windowEnd),
+    sortTimeMS,
+    messages: 0
+  };
+  points.set(key, point);
+  return point;
+}
+
+function sentimentWindowKey(
+  source: "chat" | "transcript",
+  sessionID: string | undefined,
+  channelID: string | undefined,
+  windowStart: string | undefined,
+  windowEnd: string | undefined,
+  index: number
+) {
+  if (sessionID && channelID && windowStart && windowEnd) {
+    return `${sessionID}:${channelID}:${windowStart}:${windowEnd}`;
+  }
+  return `${source}:${sessionID || ""}:${channelID || ""}:${windowStart || ""}:${windowEnd || ""}:${index}`;
 }
 
 function buildReactionWindowPoints(windows: ReactionWindow[]): SentimentPoint[] {
@@ -4582,6 +4626,9 @@ function parseEventPayload<T>(data: string): T | undefined {
 }
 
 export const dashboardUITestAccess = {
+  buildHealthMetrics,
+  buildSentimentPoints,
   primaryInsightForWindow,
-  reactionChartDescription
+  reactionChartDescription,
+  transcriptFinalityForBucket
 };

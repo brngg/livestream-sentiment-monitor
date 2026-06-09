@@ -8,7 +8,7 @@ services:
     autoDeploy: true
     dockerfilePath: ./services/chat-ingestor-go/Dockerfile.dashboard
     dockerContext: .
-    healthCheckPath: /
+    healthCheckPath: /ready
     envVars:
       - key: VITE_ENABLE_EVAL_LAB
         value: "false"
@@ -94,7 +94,7 @@ services:
   - type: pserv
     name: stream-reaction-sentiment-live
     runtime: docker
-    plan: starter
+    plan: standard
     region: oregon
     branch: main
     autoDeploy: true
@@ -102,19 +102,21 @@ services:
     dockerContext: ./services/sentiment-analyzer-python
     envVars:
       - key: SENTIMENT_MODEL
-        value: cardiffnlp/twitter-xlm-roberta-base-sentiment-multilingual
+        value: cardiffnlp/twitter-roberta-base-sentiment-latest
+      - key: SENTIMENT_BACKEND
+        value: transformers
       - key: SENTIMENT_BATCH_SIZE
-        value: "16"
+        value: "8"
       - key: SENTIMENT_TRACE_LIMIT
         value: "18"
       - key: SENTIMENT_MAX_MESSAGES
-        value: "32"
+        value: "16"
       - key: SENTIMENT_MAX_TEXT_CHARS
         value: "280"
       - key: SENTIMENT_DEVICE
         value: "-1"
       - key: SENTIMENT_WARMUP
-        value: "false"
+        value: "true"
       - key: OMP_NUM_THREADS
         value: "2"
       - key: MKL_NUM_THREADS

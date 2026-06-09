@@ -321,6 +321,30 @@ func TestHealthReportsAnalyzerUnavailable(t *testing.T) {
 	}
 }
 
+func TestReadyIgnoresDependencyHealth(t *testing.T) {
+	server := &server{
+		cfg:   appConfig{NLPAnalyzerURL: "http://127.0.0.1:1"},
+		store: storage.NewNoopStore(),
+	}
+
+	recorder := httptest.NewRecorder()
+	server.handleReady(recorder, httptest.NewRequest(http.MethodGet, "/ready", nil))
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ready status code = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	var body struct {
+		Status  string `json:"status"`
+		Service string `json:"service"`
+	}
+	if err := json.NewDecoder(recorder.Body).Decode(&body); err != nil {
+		t.Fatalf("decode ready response: %v", err)
+	}
+	if body.Status != "ok" || body.Service != "chat-dashboard" {
+		t.Fatalf("unexpected ready body: %#v", body)
+	}
+}
+
 func TestHealthDoesNotPersistSystemMetrics(t *testing.T) {
 	store := &metricCaptureStore{}
 	server := &server{

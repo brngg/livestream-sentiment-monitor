@@ -81,6 +81,7 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "status": "ok",
                     "model": analyzer.model_name,
+                    "backend": analyzer.backend,
                     "batch_size": analyzer.batch_size,
                     "max_messages": analyzer.max_messages,
                     "max_text_chars": analyzer.max_text_chars,
@@ -174,7 +175,7 @@ def main() -> None:
     if env_bool("SENTIMENT_WARMUP", True):
         started = time.perf_counter()
         analyzer = get_analyzer()
-        analyzer.classifier(["warmup"], batch_size=1, truncation=True)
+        analyzer.warmup()
         elapsed_ms = int((time.perf_counter() - started) * 1000)
         print(f"sentiment analyzer warmup completed in {elapsed_ms}ms", flush=True)
 

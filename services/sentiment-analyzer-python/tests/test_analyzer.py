@@ -2,7 +2,7 @@ import threading
 import time
 import unittest
 
-from app.analyzer import TransformersSentimentAnalyzer
+from app.analyzer import LexiconSentimentAnalyzer, TransformersSentimentAnalyzer
 
 
 class FakeClassifier:
@@ -21,6 +21,22 @@ class FakeClassifier:
             else:
                 outputs.append({"label": "neutral", "score": 0.80})
         return outputs
+
+
+class FullScoreClassifier:
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, texts, **kwargs):
+        self.calls.append({"texts": list(texts), "kwargs": dict(kwargs)})
+        return [
+            [
+                {"label": "negative", "score": 0.10},
+                {"label": "neutral", "score": 0.20},
+                {"label": "positive", "score": 0.70},
+            ]
+            for _ in texts
+        ]
 
 
 class AnalyzerTest(unittest.TestCase):
@@ -113,6 +129,24 @@ class AnalyzerTest(unittest.TestCase):
         self.assertEqual(classifier.calls[0]["texts"], ["great cl"])
         self.assertEqual(result["message_scores"][0]["text"], "great cl")
 
+    def test_transformer_backend_aggregates_full_class_scores(self):
+        classifier = FullScoreClassifier()
+        analyzer = TransformersSentimentAnalyzer(
+            model_name="test-model",
+            classifier=classifier,
+            trace_limit=2,
+        )
+
+        result = analyzer.analyze_bucket([{"text": "great clutch"}])
+
+        self.assertEqual(classifier.calls[0]["kwargs"]["top_k"], None)
+        self.assertEqual(classifier.calls[0]["kwargs"]["function_to_apply"], "softmax")
+        self.assertAlmostEqual(result["positive"], 0.70)
+        self.assertAlmostEqual(result["neutral"], 0.20)
+        self.assertAlmostEqual(result["negative"], 0.10)
+        self.assertAlmostEqual(result["sentiment_score"], 0.60)
+        self.assertEqual(result["message_scores"][0]["label"], "positive")
+
     def test_truncated_text_is_stripped_consistently(self):
         classifier = FakeClassifier()
         analyzer = TransformersSentimentAnalyzer(
@@ -169,6 +203,24 @@ class AnalyzerTest(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(classifier.calls, 2)
         self.assertEqual(classifier.max_active_calls, 1)
+
+    def test_lexicon_backend_scores_without_transformer_classifier(self):
+        analyzer = LexiconSentimentAnalyzer(trace_limit=4)
+
+        result = analyzer.analyze_bucket(
+            [
+                {"message_id": "m1", "text": "great clutch pog"},
+                {"message_id": "m2", "text": "bad trash"},
+                {"message_id": "m3", "text": "just talking"},
+            ]
+        )
+
+        self.assertEqual(result["model"], "local-lexicon")
+        self.assertEqual(result["backend"], "lexicon")
+        self.assertEqual(result["analyzed_count"], 3)
+        self.assertGreater(result["positive"], 0)
+        self.assertGreater(result["negative"], 0)
+        self.assertEqual(result["message_scores"][0]["label"], "positive")
 
 
 if __name__ == "__main__":

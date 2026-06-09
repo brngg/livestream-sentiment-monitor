@@ -4,6 +4,7 @@ from collections import Counter
 from datetime import datetime
 from functools import lru_cache
 import os
+import re
 import threading
 from typing import Any, Protocol
 
@@ -13,6 +14,8 @@ DEFAULT_BATCH_SIZE = 32
 DEFAULT_TRACE_LIMIT = 18
 DEFAULT_MAX_MESSAGES = 32
 DEFAULT_MAX_TEXT_CHARS = 280
+DEFAULT_BACKEND = "transformers"
+DEFAULT_HF_MODEL = "cardiffnlp/twitter-roberta-base-sentiment-latest"
 
 LABEL_TO_SCORE = {
     "negative": -1.0,
@@ -35,7 +38,34 @@ class TextClassifier(Protocol):
         ...
 
 
+class HFTextClassifier(Protocol):
+    def text_classification(self, text: str, **kwargs: Any) -> Any:
+        ...
+
+
+class SentimentAnalyzer(Protocol):
+    model_name: str
+    batch_size: int
+    trace_limit: int
+    max_messages: int
+    max_text_chars: int
+    backend: str
+
+    def analyze_bucket(
+        self,
+        messages: list[dict[str, Any]],
+        peak_window_start: Any | None = None,
+        peak_window_end: Any | None = None,
+    ) -> dict[str, Any]:
+        ...
+
+    def warmup(self) -> None:
+        ...
+
+
 class TransformersSentimentAnalyzer:
+    backend = "transformers"
+
     def __init__(
         self,
         model_name: str | None = None,
@@ -84,19 +114,155 @@ class TransformersSentimentAnalyzer:
         counts = Counter(texts)
         unique_texts = list(counts.keys())
         with self._inference_lock:
-            predictions = self.classifier(
+            raw_predictions = self.classifier(
                 unique_texts,
                 batch_size=self.batch_size,
                 truncation=True,
+                top_k=None,
+                function_to_apply="softmax",
             )
-        scored = dict(zip(unique_texts, predictions, strict=True))
+        scored = {text: normalize_classification_prediction(prediction) for text, prediction in zip(unique_texts, raw_predictions, strict=True)}
         return aggregate_predictions(messages, analyzable_messages, counts, scored, self.model_name, self.trace_limit, self.max_messages)
+
+    def warmup(self) -> None:
+        self.classifier(["warmup"], batch_size=1, truncation=True)
 
     @property
     def classifier(self) -> TextClassifier:
         if self._classifier is None:
             self._classifier = load_transformers_pipeline(self.model_name)
         return self._classifier
+
+
+class LexiconSentimentAnalyzer:
+    backend = "lexicon"
+
+    def __init__(
+        self,
+        model_name: str | None = None,
+        batch_size: int | None = None,
+        trace_limit: int | None = None,
+        max_messages: int | None = None,
+        max_text_chars: int | None = None,
+    ) -> None:
+        self.model_name = model_name or os.getenv("SENTIMENT_MODEL", "local-lexicon")
+        self.batch_size = batch_size or int(os.getenv("SENTIMENT_BATCH_SIZE", str(DEFAULT_BATCH_SIZE)))
+        self.trace_limit = trace_limit or int(os.getenv("SENTIMENT_TRACE_LIMIT", str(DEFAULT_TRACE_LIMIT)))
+        self.max_messages = max_messages if max_messages is not None else int(os.getenv("SENTIMENT_MAX_MESSAGES", str(DEFAULT_MAX_MESSAGES)))
+        self.max_text_chars = max_text_chars if max_text_chars is not None else int(os.getenv("SENTIMENT_MAX_TEXT_CHARS", str(DEFAULT_MAX_TEXT_CHARS)))
+
+    def analyze_bucket(
+        self,
+        messages: list[dict[str, Any]],
+        peak_window_start: Any | None = None,
+        peak_window_end: Any | None = None,
+    ) -> dict[str, Any]:
+        analyzable_messages = normalize_messages(messages, self.max_text_chars)
+        analyzable_messages = select_analysis_messages(
+            analyzable_messages,
+            self.max_messages,
+            peak_window_start=peak_window_start,
+            peak_window_end=peak_window_end,
+        )
+        if not analyzable_messages:
+            return {
+                "message_count": len(messages),
+                "analyzed_count": 0,
+                "analysis_message_limit": active_limit(self.max_messages),
+                "sentiment_score": 0.0,
+                "positive": 0.0,
+                "neutral": 1.0,
+                "negative": 0.0,
+                "confidence": 0.0,
+                "model": self.model_name,
+                "backend": self.backend,
+                "message_scores": [],
+            }
+
+        texts = [str(message["text"]) for message in analyzable_messages]
+        counts = Counter(texts)
+        predictions = {text: lexicon_prediction(text) for text in counts}
+        result = aggregate_predictions(messages, analyzable_messages, counts, predictions, self.model_name, self.trace_limit, self.max_messages)
+        result["backend"] = self.backend
+        return result
+
+    def warmup(self) -> None:
+        return None
+
+
+class HFInferenceSentimentAnalyzer:
+    backend = "hf-inference"
+
+    def __init__(
+        self,
+        model_name: str | None = None,
+        client: HFTextClassifier | None = None,
+        batch_size: int | None = None,
+        trace_limit: int | None = None,
+        max_messages: int | None = None,
+        max_text_chars: int | None = None,
+    ) -> None:
+        self.model_name = model_name or os.getenv("SENTIMENT_MODEL", DEFAULT_HF_MODEL)
+        self.batch_size = batch_size or int(os.getenv("SENTIMENT_BATCH_SIZE", str(DEFAULT_BATCH_SIZE)))
+        self.trace_limit = trace_limit or int(os.getenv("SENTIMENT_TRACE_LIMIT", str(DEFAULT_TRACE_LIMIT)))
+        self.max_messages = max_messages if max_messages is not None else int(os.getenv("SENTIMENT_MAX_MESSAGES", str(DEFAULT_MAX_MESSAGES)))
+        self.max_text_chars = max_text_chars if max_text_chars is not None else int(os.getenv("SENTIMENT_MAX_TEXT_CHARS", str(DEFAULT_MAX_TEXT_CHARS)))
+        self._client = client
+        self._inference_lock = threading.Lock()
+
+    def analyze_bucket(
+        self,
+        messages: list[dict[str, Any]],
+        peak_window_start: Any | None = None,
+        peak_window_end: Any | None = None,
+    ) -> dict[str, Any]:
+        analyzable_messages = normalize_messages(messages, self.max_text_chars)
+        analyzable_messages = select_analysis_messages(
+            analyzable_messages,
+            self.max_messages,
+            peak_window_start=peak_window_start,
+            peak_window_end=peak_window_end,
+        )
+        if not analyzable_messages:
+            return {
+                "message_count": len(messages),
+                "analyzed_count": 0,
+                "analysis_message_limit": active_limit(self.max_messages),
+                "sentiment_score": 0.0,
+                "positive": 0.0,
+                "neutral": 1.0,
+                "negative": 0.0,
+                "confidence": 0.0,
+                "model": self.model_name,
+                "backend": self.backend,
+                "message_scores": [],
+            }
+
+        texts = [str(message["text"]) for message in analyzable_messages]
+        counts = Counter(texts)
+        predictions: dict[str, dict[str, Any]] = {}
+        with self._inference_lock:
+            for text in counts:
+                predictions[text] = normalize_classification_prediction(
+                    self.client.text_classification(
+                        text,
+                        model=self.model_name,
+                        top_k=3,
+                        function_to_apply="softmax",
+                    )
+                )
+        result = aggregate_predictions(messages, analyzable_messages, counts, predictions, self.model_name, self.trace_limit, self.max_messages)
+        result["backend"] = self.backend
+        return result
+
+    def warmup(self) -> None:
+        return None
+
+    @property
+    def client(self) -> HFTextClassifier:
+        if self._client is None:
+            self._client = load_hf_inference_client()
+        return self._client
 
 
 def analyze_bucket(
@@ -126,9 +292,12 @@ def aggregate_predictions(
         prediction = predictions[text]
         label = normalize_label(prediction.get("label", "neutral"))
         confidence = float(prediction.get("score", 0.0))
-        weighted_score += label_score(label) * confidence * count
+        distribution = prediction_distribution(prediction, label, confidence)
+        weighted_score += (distribution["positive"] - distribution["negative"]) * count
         weighted_confidence += confidence * count
-        labels[label] += count
+        labels["positive"] += distribution["positive"] * count
+        labels["neutral"] += distribution["neutral"] * count
+        labels["negative"] += distribution["negative"] * count
         analyzed_count += count
 
     for message in analyzable_messages:
@@ -168,6 +337,137 @@ def aggregate_predictions(
         "model": model_name,
         "message_scores": select_trace_messages(scored_messages, trace_limit),
     }
+
+
+def prediction_distribution(prediction: dict[str, Any], label: str, confidence: float) -> dict[str, float]:
+    raw_scores = prediction.get("scores")
+    if isinstance(raw_scores, dict):
+        scores = {"positive": 0.0, "neutral": 0.0, "negative": 0.0}
+        for raw_label, raw_score in raw_scores.items():
+            normalized_label = normalize_label(raw_label)
+            if normalized_label not in scores:
+                continue
+            try:
+                score = float(raw_score)
+            except (TypeError, ValueError):
+                continue
+            if score > scores[normalized_label]:
+                scores[normalized_label] = max(0.0, score)
+        total = sum(scores.values())
+        if total > 0:
+            return {key: value / total for key, value in scores.items()}
+
+    scores = {"positive": 0.0, "neutral": 0.0, "negative": 0.0}
+    scores[label if label in scores else "neutral"] = 1.0 if confidence >= 0 else 0.0
+    return scores
+
+
+def normalize_classification_prediction(output: Any) -> dict[str, Any]:
+    if isinstance(output, dict) and "error" in output:
+        raise RuntimeError(str(output["error"]))
+    if isinstance(output, dict):
+        label = normalize_label(output.get("label", "neutral"))
+        confidence = read_prediction_score(output)
+        scores = output.get("scores")
+        return {"label": label, "score": confidence, "scores": scores} if isinstance(scores, dict) else {"label": label, "score": confidence}
+    if not isinstance(output, list):
+        raise RuntimeError(f"unexpected Hugging Face response type: {type(output).__name__}")
+
+    scores: dict[str, float] = {}
+    for item in output:
+        label = normalize_label(read_prediction_field(item, "label", "neutral"))
+        if label not in {"positive", "neutral", "negative"}:
+            continue
+        score = read_prediction_score(item)
+        if score > scores.get(label, 0.0):
+            scores[label] = score
+
+    if not scores:
+        raise RuntimeError("classification response did not include sentiment labels")
+
+    label, confidence = max(scores.items(), key=lambda item: item[1])
+    return {"label": label, "score": confidence, "scores": scores}
+
+
+def read_prediction_field(item: Any, field: str, default: Any = None) -> Any:
+    if isinstance(item, dict):
+        return item.get(field, default)
+    return getattr(item, field, default)
+
+
+def read_prediction_score(item: Any) -> float:
+    value = read_prediction_field(item, "score", 0.0)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+LEXICON_TERMS = {
+    "amazing": 1.0,
+    "awesome": 0.9,
+    "best": 0.8,
+    "clutch": 0.9,
+    "cool": 0.4,
+    "fire": 0.7,
+    "funny": 0.4,
+    "gg": 0.5,
+    "good": 0.5,
+    "great": 0.9,
+    "happy": 0.6,
+    "hype": 0.7,
+    "insane": 0.5,
+    "interesting": 0.3,
+    "like": 0.4,
+    "love": 1.0,
+    "nice": 0.6,
+    "perfect": 0.9,
+    "pog": 0.8,
+    "poggers": 0.8,
+    "thanks": 0.4,
+    "w": 0.6,
+    "win": 0.6,
+    "wow": 0.5,
+    "awful": -1.0,
+    "bad": -0.7,
+    "boring": -0.5,
+    "confused": -0.4,
+    "hate": -1.0,
+    "hard": -0.2,
+    "lost": -0.4,
+    "rough": -0.6,
+    "sad": -0.5,
+    "scary": -0.4,
+    "throw": -0.5,
+    "trash": -0.9,
+    "terrible": -1.0,
+    "ugh": -0.5,
+    "weird": -0.3,
+    "wrong": -0.5,
+}
+
+
+def lexicon_prediction(text: str) -> dict[str, Any]:
+    scores = [LEXICON_TERMS[token] for token in sentiment_tokens(text) if token in LEXICON_TERMS]
+    if not scores:
+        return {"label": "neutral", "score": 0.45}
+
+    score = clamp(sum(scores) / len(scores), -1.0, 1.0)
+    if score > 0.15:
+        label = "positive"
+    elif score < -0.15:
+        label = "negative"
+    else:
+        label = "neutral"
+    return {"label": label, "score": clamp(0.35 + len(scores) * 0.10, 0.35, 0.85)}
+
+
+def sentiment_tokens(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", text.lower())
+
+
+def clamp(value: float, minimum: float, maximum: float) -> float:
+    return min(maximum, max(minimum, value))
 
 
 def normalize_messages(messages: list[dict[str, Any]], max_text_chars: int) -> list[dict[str, Any]]:
@@ -326,8 +626,26 @@ def normalize_text(value: Any) -> str:
 
 
 @lru_cache(maxsize=1)
-def get_analyzer() -> TransformersSentimentAnalyzer:
+def get_analyzer() -> SentimentAnalyzer:
+    backend = os.getenv("SENTIMENT_BACKEND", DEFAULT_BACKEND).strip().lower()
+    model_name = os.getenv("SENTIMENT_MODEL", "").strip().lower()
+    if backend in {"hf", "hf-inference", "huggingface", "huggingface-inference"}:
+        return HFInferenceSentimentAnalyzer(model_name=os.getenv("SENTIMENT_MODEL", DEFAULT_HF_MODEL))
+    if backend in {"lexicon", "local", "local-lexicon"} or model_name in {"lexicon", "local", "local-lexicon"}:
+        return LexiconSentimentAnalyzer(model_name=os.getenv("SENTIMENT_MODEL", "local-lexicon"))
     return TransformersSentimentAnalyzer()
+
+
+def load_hf_inference_client() -> HFTextClassifier:
+    token = os.getenv("HF_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError("HF_TOKEN is required when SENTIMENT_BACKEND=hf-inference")
+    try:
+        from huggingface_hub import InferenceClient
+    except ImportError as exc:
+        raise RuntimeError("Missing huggingface_hub dependency for SENTIMENT_BACKEND=hf-inference") from exc
+
+    return InferenceClient(provider="hf-inference", api_key=token)
 
 
 def load_transformers_pipeline(model_name: str) -> TextClassifier:
