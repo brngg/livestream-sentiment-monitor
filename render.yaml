@@ -8,7 +8,7 @@ services:
     autoDeploy: true
     dockerfilePath: ./services/chat-ingestor-go/Dockerfile.dashboard
     dockerContext: .
-    healthCheckPath: /health
+    healthCheckPath: /
     envVars:
       - key: VITE_ENABLE_EVAL_LAB
         value: "false"
