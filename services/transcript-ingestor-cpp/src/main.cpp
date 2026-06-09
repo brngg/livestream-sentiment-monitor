@@ -1223,8 +1223,77 @@ private:
 AsrWorker g_asr_worker;
 AsrWorker g_repair_worker;
 
+struct LocalSentiment {
+    double score = 0.0;
+    double confidence = 0.25;
+    std::string label = "neutral";
+};
+
+double clamp_double(double value, double min_value, double max_value) {
+    return std::max(min_value, std::min(max_value, value));
+}
+
+std::vector<std::string> sentiment_tokens(const std::string &text) {
+    std::vector<std::string> tokens;
+    std::string current;
+    for (unsigned char ch : text) {
+        if (std::isalnum(ch)) {
+            current.push_back(static_cast<char>(std::tolower(ch)));
+        } else if (!current.empty()) {
+            tokens.push_back(current);
+            current.clear();
+        }
+    }
+    if (!current.empty()) tokens.push_back(current);
+    return tokens;
+}
+
+LocalSentiment local_sentiment(const std::string &text) {
+    static const std::map<std::string, double> terms = {
+        {"amazing", 1.0}, {"awesome", 0.9}, {"best", 0.8}, {"cool", 0.4},
+        {"funny", 0.4}, {"good", 0.5}, {"great", 0.9}, {"happy", 0.6},
+        {"insane", 0.5}, {"interesting", 0.3}, {"like", 0.4}, {"love", 1.0},
+        {"nice", 0.6}, {"perfect", 0.9}, {"thanks", 0.4}, {"wow", 0.5},
+        {"awful", -1.0}, {"bad", -0.7}, {"boring", -0.5}, {"confused", -0.4},
+        {"hate", -1.0}, {"hard", -0.2}, {"lost", -0.4}, {"rough", -0.6},
+        {"sad", -0.5}, {"scary", -0.4}, {"terrible", -1.0}, {"weird", -0.3},
+        {"wrong", -0.5}
+    };
+
+    double total = 0.0;
+    int hits = 0;
+    for (const auto &token : sentiment_tokens(text)) {
+        auto found = terms.find(token);
+        if (found == terms.end()) continue;
+        total += found->second;
+        hits++;
+    }
+
+    LocalSentiment result;
+    if (hits == 0) return result;
+
+    result.score = clamp_double(total / static_cast<double>(hits), -1.0, 1.0);
+    if (result.score > 0.15) result.label = "positive";
+    if (result.score < -0.15) result.label = "negative";
+    result.confidence = clamp_double(0.35 + static_cast<double>(hits) * 0.10, 0.35, 0.75);
+    return result;
+}
+
+void apply_local_sentiment(Bucket &bucket, const std::string &status) {
+    LocalSentiment result = local_sentiment(bucket.text);
+    bucket.sentiment_score = result.score;
+    bucket.sentiment_confidence = result.confidence;
+    bucket.sentiment_label = result.label;
+    bucket.sentiment_model = "local-lexicon";
+    bucket.sentiment_status = status;
+}
+
 void apply_sentiment(Bucket &bucket) {
-    if (g_config.analyzer_url.empty() || bucket.text.empty()) return;
+    if (bucket.text.empty()) return;
+    if (g_config.analyzer_url.empty()) {
+        apply_local_sentiment(bucket, "local");
+        return;
+    }
     auto started = Clock::now();
     fs::path temp = fs::temp_directory_path() / ("transcript-sentiment-" + bucket.session_id + ".json");
     {
@@ -1245,7 +1314,7 @@ void apply_sentiment(Bucket &bucket) {
     fs::remove(temp);
     bucket.sentiment_latency_ms = ms_between(started, Clock::now());
     if (response.empty()) {
-        bucket.sentiment_status = "unavailable";
+        apply_local_sentiment(bucket, "fallback");
         return;
     }
     bucket.sentiment_score = json_number(response, "sentiment_score");
