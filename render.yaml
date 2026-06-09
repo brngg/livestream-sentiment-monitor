@@ -114,7 +114,7 @@ services:
       - key: SENTIMENT_DEVICE
         value: "-1"
       - key: SENTIMENT_WARMUP
-        value: "true"
+        value: "false"
       - key: OMP_NUM_THREADS
         value: "2"
       - key: MKL_NUM_THREADS
