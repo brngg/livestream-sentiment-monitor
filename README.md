@@ -50,8 +50,7 @@ signal evidence.
 
 [Watch the higher-quality MP4](docs/demo/live-full-package-stableronaldo.mp4)
 
-For capture notes, reproducibility details, and responsible-use caveats, see
-[docs/demo.md](docs/demo.md).
+For capture notes and reproducibility details, see [docs/demo.md](docs/demo.md).
 
 ## Core Features
 
@@ -78,14 +77,6 @@ For capture notes, reproducibility details, and responsible-use caveats, see
 - Proof endpoints for checking whether a signal has enough supporting data.
 - Human label endpoints for reviewing signal windows.
 - Seed reports and regression checks for validating the evaluation workflow.
-
-### Demo Safety
-
-- Admin-token controls.
-- Max active session limits.
-- Session duration limits.
-- Daily live-start limits.
-- Source allowlists for controlled live demos.
 
 ## Technology Overview
 
