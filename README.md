@@ -35,9 +35,8 @@ window keeps timing, sentiment, chat samples, transcript context, and proof
 metrics so a reviewer can decide whether the signal is meaningful.
 
 The public demo path is a controlled live dashboard: visitors can start a
-short Twitch livestream session, watch chat sentiment and speech transcript
-signals update in real time, and inspect the aligned evidence while the
-session is active.
+short Twitch livestream session, watch transcript and timeline signals update
+in real time, and inspect the aligned evidence while the session is active.
 
 ## Live Demo
 
@@ -228,14 +227,16 @@ curl -fsS http://localhost:8090/sessions/history
 
 The public demo is a live frontend experience for trying the monitor against a
 Twitch livestream. A visitor enters a Twitch channel or livestream URL, starts
-a short session, and sees chat sentiment, transcript snippets, timeline
+a short session, and sees the live dashboard, transcript snippets, timeline
 charts, and chat/transcript alignment update while the stream is running.
 
-The hosted demo is intentionally lightweight. It does not need database-backed
-storage, Eval Lab, replay history, Redpanda/Kafka, or production observability.
-Session state can stay in memory for the current run, with live starts capped
-by active-session, duration, and daily limits. Twitch and NVIDIA credentials
-remain server-side service secrets.
+The hosted demo is a limited feature preview. Hosted sentiment scoring is
+currently disabled while the sentiment model deployment is tuned for Render
+resource limits and project budget. The full local stack remains the intended
+path for end-to-end sentiment scoring, Eval Lab, replay history,
+Redpanda/Kafka, Postgres, and production observability. Session state can stay
+in memory for the hosted run, and Twitch and NVIDIA credentials remain
+server-side service secrets.
 
 ## Routes And APIs
 
